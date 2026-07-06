@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Past round — Food Bank Order{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Past round</h1>
+    <p class="page-subtitle">
+      Archived {{ round_entry.archived_at[:10] }} — {{ round_entry.order_count }} orders
+    </p>
+  </div>
+  <a href="{{ url_for('admin_dashboard', tab='history') }}" class="btn">Back to past rounds</a>
+</div>
+
+{% if round_entry.totals %}
+  <div class="card">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Item</th>
+          <th>Category</th>
+          <th class="num-col">Total</th>
+          <th>Unit</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in round_entry.totals %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ row.name }}</td>
+            <td>{{ row.category }}</td>
+            <td class="num-col"><strong>{{ row.quantity }}</strong></td>
+            <td>{{ row.unit }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <div class="empty-state">
+    <p>This round has no item totals.</p>
+  </div>
+{% endif %}
+{% endblock %}

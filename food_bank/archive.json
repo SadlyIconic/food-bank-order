@@ -1,0 +1,128 @@
+[
+  {
+    "id": "c2014c58-0c7a-45c9-b3d7-158861c2bc37",
+    "archived_at": "2026-07-06T15:56:38.001984+00:00",
+    "order_count": 1,
+    "totals": [
+      {
+        "item_id": "apples",
+        "name": "Apples",
+        "category": "Produce",
+        "unit": "lb",
+        "quantity": 3
+      },
+      {
+        "item_id": "milk",
+        "name": "Whole milk (gallon)",
+        "category": "Dairy",
+        "unit": "gallon",
+        "quantity": 2
+      }
+    ]
+  },
+  {
+    "id": "f23ba182-b7d3-4791-8d22-b97410bcd0ca",
+    "archived_at": "2026-07-06T16:18:13.182873+00:00",
+    "order_count": 2,
+    "totals": [
+      {
+        "item_id": "toothpaste",
+        "name": "Toothpaste",
+        "category": "Household",
+        "unit": "tube",
+        "quantity": 18
+      },
+      {
+        "item_id": "frozen-pizza",
+        "name": "Frozen cheese pizza",
+        "category": "Frozen",
+        "unit": "pizza",
+        "quantity": 7
+      },
+      {
+        "item_id": "bananas",
+        "name": "Bananas",
+        "category": "Produce",
+        "unit": "bunch",
+        "quantity": 5
+      },
+      {
+        "item_id": "chicken-breast",
+        "name": "Chicken breast",
+        "category": "Protein",
+        "unit": "lb",
+        "quantity": 4
+      },
+      {
+        "item_id": "apples",
+        "name": "Apples",
+        "category": "Produce",
+        "unit": "lb",
+        "quantity": 3
+      },
+      {
+        "item_id": "yogurt",
+        "name": "Plain yogurt (32 oz)",
+        "category": "Dairy",
+        "unit": "tub",
+        "quantity": 3
+      },
+      {
+        "item_id": "onions",
+        "name": "Yellow onions",
+        "category": "Produce",
+        "unit": "lb",
+        "quantity": 2
+      },
+      {
+        "item_id": "peanut-butter",
+        "name": "Peanut butter (16 oz)",
+        "category": "Protein",
+        "unit": "jar",
+        "quantity": 2
+      },
+      {
+        "item_id": "turkey-slices",
+        "name": "Deli turkey slices",
+        "category": "Protein",
+        "unit": "pack",
+        "quantity": 2
+      },
+      {
+        "item_id": "lettuce",
+        "name": "Romaine lettuce",
+        "category": "Produce",
+        "unit": "head",
+        "quantity": 1
+      },
+      {
+        "item_id": "broccoli",
+        "name": "Broccoli",
+        "category": "Produce",
+        "unit": "bunch",
+        "quantity": 1
+      },
+      {
+        "item_id": "eggs",
+        "name": "Eggs (dozen)",
+        "category": "Protein",
+        "unit": "dozen",
+        "quantity": 1
+      },
+      {
+        "item_id": "milk",
+        "name": "Whole milk (gallon)",
+        "category": "Dairy",
+        "unit": "gallon",
+        "quantity": 1
+      },
+      {
+        "item_id": "butter",
+        "name": "Butter (1 lb)",
+        "category": "Dairy",
+        "unit": "box",
+        "quantity": 1
+      }
+    ]
+  }
+]

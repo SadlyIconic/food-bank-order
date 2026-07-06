@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: food-bank-order
+    runtime: python
+    plan: free
+    rootDir: food_bank
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT

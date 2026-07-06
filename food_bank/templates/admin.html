@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Admin — Food Bank Order{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Admin dashboard</h1>
+    <p class="page-subtitle">Aggregated shopping totals for the current round.</p>
+  </div>
+  <form method="post" action="{{ url_for('admin_logout') }}" class="inline-form">
+    <button type="submit" class="btn btn-muted">Log out</button>
+  </form>
+</div>
+
+<nav class="admin-tabs" role="tablist">
+  <a
+    href="{{ url_for('admin_dashboard', tab='current') }}"
+    class="admin-tab{% if tab == 'current' %} active{% endif %}"
+    role="tab"
+  >Current totals</a>
+  <a
+    href="{{ url_for('admin_dashboard', tab='history') }}"
+    class="admin-tab{% if tab == 'history' %} active{% endif %}"
+    role="tab"
+  >Past rounds</a>
+</nav>
+
+{% if tab == 'current' %}
+  {% if totals %}
+    <div class="card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Item</th>
+            <th>Category</th>
+            <th class="num-col">Total</th>
+            <th>Unit</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in totals %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>{{ row.name }}</td>
+              <td>{{ row.category }}</td>
+              <td class="num-col"><strong>{{ row.quantity }}</strong></td>
+              <td>{{ row.unit }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="5" class="table-footer">
+              {{ order_count }} individual order{{ 's' if order_count != 1 else '' }} in this round
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <form
+      method="post"
+      action="{{ url_for('admin_reset') }}"
+      class="reset-form"
+      onsubmit="return confirm('Archive this round and reset the shopping list?');"
+    >
+      <button type="submit" class="btn btn-danger">Reset round (archive &amp; clear)</button>
+    </form>
+  {% else %}
+    <div class="empty-state">
+      <p>No orders yet. Totals will appear here as shoppers submit orders.</p>
+      <a href="{{ url_for('shop') }}" class="btn">View shop</a>
+    </div>
+  {% endif %}
+{% else %}
+  {% if archive_rounds %}
+    <div class="card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Archived</th>
+            <th class="num-col">Orders</th>
+            <th class="num-col">Items</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for round in archive_rounds %}
+            <tr>
+              <td>{{ round.archived_at[:10] }} {{ round.archived_at[11:16] }} UTC</td>
+              <td class="num-col">{{ round.order_count }}</td>
+              <td class="num-col">{{ round.totals | length }}</td>
+              <td>
+                <a href="{{ url_for('admin_round_detail', round_id=round.id) }}" class="btn btn-sm">View totals</a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <p>No archived rounds yet. Use “Reset round” on the Current totals tab after shopping.</p>
+      <a href="{{ url_for('admin_dashboard', tab='current') }}" class="btn">Current totals</a>
+    </div>
+  {% endif %}
+{% endif %}
+{% endblock %}

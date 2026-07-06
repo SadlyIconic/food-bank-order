@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Shop — Food Bank Order{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Shop</h1>
+    <p class="page-subtitle">Browse items and add them to your cart.</p>
+  </div>
+</div>
+
+<div class="shop-controls">
+  <label class="search-label" for="item-search">Search</label>
+  <input type="search" id="item-search" placeholder="Search by name…" autocomplete="off">
+
+  <div class="category-tabs" id="category-tabs" role="tablist">
+    <button type="button" class="category-tab active" data-category="all" role="tab">All</button>
+    {% for category in categories %}
+      <button type="button" class="category-tab" data-category="{{ category }}" role="tab">{{ category }}</button>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="item-grid" id="item-grid">
+  {% for item in items %}
+    <article
+      class="item-card"
+      data-item-id="{{ item.id }}"
+      data-name="{{ item.name | lower }}"
+      data-category="{{ item.category }}"
+    >
+      <div class="item-card-body">
+        <span class="item-category">{{ item.category }}</span>
+        <h2 class="item-name">{{ item.name }}</h2>
+        <p class="item-unit">per {{ item.unit }}</p>
+      </div>
+      <div class="item-card-actions">
+        <div class="qty-stepper">
+          <button type="button" class="qty-btn qty-minus" aria-label="Decrease quantity">−</button>
+          <input type="number" class="qty-input" value="1" min="1" aria-label="Quantity">
+          <button type="button" class="qty-btn qty-plus" aria-label="Increase quantity">+</button>
+        </div>
+        <button type="button" class="btn btn-primary add-to-cart-btn">Add to cart</button>
+      </div>
+    </article>
+  {% endfor %}
+</div>
+
+<div class="empty-state" id="shop-empty" hidden>
+  <p>No items match your search or filter.</p>
+  <button type="button" class="btn" id="clear-filters-btn">Clear filters</button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    FoodBankCart.initShopPage();
+  });
+</script>
+{% endblock %}

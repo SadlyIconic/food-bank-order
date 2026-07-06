@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Cart — Food Bank Order{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Your cart</h1>
+    <p class="page-subtitle">Review items before checkout.</p>
+  </div>
+  <a href="{{ url_for('shop') }}" class="btn">Continue shopping</a>
+</div>
+
+<div id="cart-content" hidden>
+  <div class="card cart-table-wrap">
+    <table class="data-table cart-table">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Qty</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="cart-lines"></tbody>
+    </table>
+  </div>
+
+  <div class="card checkout-form">
+    <div class="form-group">
+      <label for="household_name">Household / name <span class="label-optional">(optional)</span></label>
+      <input type="text" id="household_name" name="household_name" placeholder="e.g. Smith family" maxlength="100">
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" id="review-order-btn">Review order</button>
+    </div>
+  </div>
+</div>
+
+<div class="empty-state" id="cart-empty">
+  <p>Your cart is empty.</p>
+  <a href="{{ url_for('shop') }}" class="btn btn-primary">Start shopping</a>
+</div>
+
+<script type="application/json" id="catalog-data">{{ items | tojson }}</script>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    FoodBankCart.initCartPage();
+  });
+</script>
+{% endblock %}
