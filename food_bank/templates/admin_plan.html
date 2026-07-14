@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}Plan pickup — Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Plan pickup</h1>
+    <p class="page-subtitle">Choose quantities from store surplus under the trip weight limit.</p>
+  </div>
+  <a href="{{ url_for('admin_dashboard') }}" class="btn">Back to dashboard</a>
+</div>
+
+<div class="card weight-bar-card">
+  <div class="weight-bar-header">
+    <span>Trip weight</span>
+    <strong id="plan-weight-label">{{ '%.1f' | format(selection.total_weight_lb) }} / {{ '%.0f' | format(weight_limit) }} lb</strong>
+  </div>
+  <div class="weight-bar-track">
+    {% set pct = (selection.total_weight_lb / weight_limit * 100) if weight_limit > 0 else 0 %}
+    <div
+      class="weight-bar-fill{% if pct > 100 %} weight-bar-over{% elif pct > 85 %} weight-bar-near{% endif %}"
+      id="plan-weight-fill"
+      style="width: {{ [pct, 100] | min }}%;"
+    ></div>
+  </div>
+  {% if selection.total_weight_lb > weight_limit %}
+    <p class="weight-warning">Selection exceeds weight limit by {{ '%.1f' | format(selection.total_weight_lb - weight_limit) }} lb.</p>
+  {% endif %}
+</div>
+
+<form method="post" action="{{ url_for('admin_plan') }}" id="plan-form">
+  {% if planner_rows %}
+    <div class="card">
+      <table class="data-table planner-table">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th class="num-col">Requested</th>
+            <th class="num-col">Available</th>
+            <th class="num-col">Pick qty</th>
+            <th class="num-col">Weight</th>
+            <th class="num-col">Fill %</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in planner_rows %}
+            <tr>
+              <td>
+                {{ row.name }}
+                {% if row.expires_soon %}
+                  <span class="badge badge-warn">expires today</span>
+                {% endif %}
+              </td>
+              <td class="num-col">{{ row.requested }}</td>
+              <td class="num-col">{{ row.available_qty }}</td>
+              <td class="num-col">
+                <input
+                  type="number"
+                  name="pick_{{ row.item_id }}"
+                  value="{{ row.pick_qty if row.pick_qty else '' }}"
+                  min="0"
+                  max="{{ row.available_qty }}"
+                  class="qty-input-inline pick-qty-input"
+                  data-weight="{{ row.weight_lb }}"
+                  placeholder="0"
+                >
+              </td>
+              <td class="num-col line-weight" data-item="{{ row.item_id }}">{{ '%.1f' | format(row.line_weight_lb) }} lb</td>
+              <td class="num-col">{{ row.fill_pct }}%</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <p>No demand or inventory yet. Collect orders and enter <a href="{{ url_for('admin_inventory') }}">store inventory</a> first.</p>
+    </div>
+  {% endif %}
+
+  <div class="form-actions">
+    <button type="submit" name="action" value="save" class="btn btn-primary">Save selection</button>
+    <button type="submit" name="action" value="suggest" class="btn">Suggest fill</button>
+    <button type="submit" name="action" value="fulfill" class="btn">Record fulfillment</button>
+  </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const limit = {{ weight_limit }};
+    const fill = document.getElementById("plan-weight-fill");
+    const label = document.getElementById("plan-weight-label");
+    const inputs = document.querySelectorAll(".pick-qty-input");
+
+    function updateBar() {
+      let total = 0;
+      inputs.forEach((input) => {
+        const qty = parseInt(input.value, 10) || 0;
+        const wt = parseFloat(input.dataset.weight) || 0;
+        total += qty * wt;
+        const row = input.closest("tr");
+        const cell = row?.querySelector(".line-weight");
+        if (cell) cell.textContent = (qty * wt).toFixed(1) + " lb";
+      });
+      total = Math.round(total * 10) / 10;
+      const pct = limit > 0 ? Math.min(100, (total / limit) * 100) : 0;
+      if (fill) {
+        fill.style.width = pct + "%";
+        fill.classList.toggle("weight-bar-over", total > limit);
+        fill.classList.toggle("weight-bar-near", total <= limit && pct > 85);
+      }
+      if (label) label.textContent = total.toFixed(1) + " / " + limit + " lb";
+    }
+
+    inputs.forEach((input) => input.addEventListener("input", updateBar));
+  });
+</script>
+{% endblock %}

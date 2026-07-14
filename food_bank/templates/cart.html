@@ -1,53 +1,109 @@
 {% extends "base.html" %}
 
+
+
 {% block title %}Cart — Food Bank Order{% endblock %}
 
+
+
 {% block content %}
+
 <div class="page-header">
+
   <div>
-    <h1>Your cart</h1>
-    <p class="page-subtitle">Review items before checkout.</p>
+
+    <h1 data-i18n="cart_title">Your cart</h1>
+
+    <p class="page-subtitle"><span id="cart-subtitle-weight">Review items before checkout.</span></p>
+
   </div>
-  <a href="{{ url_for('shop') }}" class="btn">Continue shopping</a>
+
+  <a href="{{ url_for('shop') }}" class="btn" data-i18n="continue_shopping">Continue shopping</a>
+
 </div>
+
+
 
 <div id="cart-content" hidden>
+
   <div class="card cart-table-wrap">
+
     <table class="data-table cart-table">
+
       <thead>
+
         <tr>
-          <th>Item</th>
-          <th>Qty</th>
+
+          <th data-i18n="item_col">Item</th>
+
+          <th data-i18n="qty">Qty</th>
+
           <th></th>
+
         </tr>
+
       </thead>
+
       <tbody id="cart-lines"></tbody>
+
     </table>
+
   </div>
+
+
 
   <div class="card checkout-form">
+
     <div class="form-group">
-      <label for="household_name">Household / name <span class="label-optional">(optional)</span></label>
-      <input type="text" id="household_name" name="household_name" placeholder="e.g. Smith family" maxlength="100">
+
+      <label for="household_name"><span data-i18n="household_label">Household / name</span> <span class="label-optional" data-i18n="household_optional">(optional)</span></label>
+
+      <input type="text" id="household_name" name="household_name" data-i18n-placeholder="household_placeholder" placeholder="e.g. Smith family" maxlength="100">
+
     </div>
+
     <div class="form-actions">
-      <button type="submit" class="btn btn-primary" id="review-order-btn">Review order</button>
+
+      <button type="submit" class="btn btn-primary" id="review-order-btn" data-i18n="review_order">Review order</button>
+
     </div>
+
   </div>
+
 </div>
+
+
 
 <div class="empty-state" id="cart-empty">
-  <p>Your cart is empty.</p>
-  <a href="{{ url_for('shop') }}" class="btn btn-primary">Start shopping</a>
+
+  <p data-i18n="cart_empty">Your cart is empty.</p>
+
+  <a href="{{ url_for('shop') }}" class="btn btn-primary" data-i18n="start_shopping">Start shopping</a>
+
 </div>
 
+
+
+<span id="order-weight-limit" hidden>{{ order_weight_limit_lb }}</span>
+
 <script type="application/json" id="catalog-data">{{ items | tojson }}</script>
+
 {% endblock %}
 
+
+
 {% block scripts %}
+
 <script>
+
   document.addEventListener("DOMContentLoaded", () => {
+
     FoodBankCart.initCartPage();
+
   });
+
 </script>
+
 {% endblock %}
+
+

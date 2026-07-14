@@ -1,0 +1,143 @@
+{
+  "apples": {
+    "source": "wikimedia-commons",
+    "license": "CC0 or public domain",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/9/91/Green_Apple_Icon.png"
+  },
+  "bananas": {
+    "source": "wikimedia-commons",
+    "license": "CC0 or public domain",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/3/31/Banana_Icon.png"
+  },
+  "potatoes": {
+    "source": "wikimedia-commons",
+    "license": "CC0 or public domain",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/4/42/Potatoes.png"
+  },
+  "milk": {
+    "source": "wikimedia-commons",
+    "license": "CC0 or public domain",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6a/Milk_carton_icon.svg/330px-Milk_carton_icon.svg.png"
+  },
+  "bread-loaf": {
+    "source": "wikimedia-commons",
+    "license": "CC0 or public domain",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Jean_victor_balin_bread.svg/330px-Jean_victor_balin_bread.svg.png"
+  },
+  "chicken-breast": {
+    "source": "wikimedia-commons",
+    "license": "CC0 or public domain",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Baked_chicken_icon.svg/120px-Baked_chicken_icon.svg.png"
+  },
+  "ground-beef": {
+    "source": "wikimedia-commons",
+    "license": "CC0 or public domain",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Beef_icon.svg/120px-Beef_icon.svg.png"
+  },
+  "pasta-spaghetti": {
+    "source": "wikimedia-commons",
+    "license": "CC0 or public domain",
+    "url": "https://commons.wikimedia.org/w/thumb.php?width=330&f=Food-luxury-pasta.svg"
+  },
+  "frozen-pizza": {
+    "source": "wikimedia-commons",
+    "license": "CC0 or public domain",
+    "url": "https://commons.wikimedia.org/w/thumb.php?width=330&f=Pizza.svg"
+  },
+  "black-beans": {
+    "source": "wikimedia-commons",
+    "license": "CC0 or public domain",
+    "url": "https://commons.wikimedia.org/w/thumb.php?width=330&f=Green_soda_can_3d.svg"
+  },
+  "juice-apple": {
+    "source": "wikimedia-commons",
+    "license": "CC0 or public domain",
+    "url": "https://commons.wikimedia.org/w/thumb.php?width=330&f=Honey_Jar_icon.svg"
+  },
+  "raisins": {
+    "source": "wikimedia-commons",
+    "license": "CC0 or public domain",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/8/86/Strawberry_%28transparent_background%29.png"
+  },
+  "coffee": {
+    "source": "opengameart-bluecarrot16",
+    "license": "CC0",
+    "file": "orig/misc/coffee_beans.png"
+  },
+  "turkey-slices": {
+    "source": "wikimedia-commons",
+    "from": "ground-beef",
+    "license": "CC0 or public domain",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Beef_icon.svg/120px-Beef_icon.svg.png"
+  },
+  "rice-brown": {
+    "source": "alias",
+    "from": "rice-white"
+  },
+  "pasta-macaroni": {
+    "source": "wikimedia-commons",
+    "from": "pasta-spaghetti",
+    "license": "CC0 or public domain",
+    "url": "https://commons.wikimedia.org/w/thumb.php?width=330&f=Food-luxury-pasta.svg"
+  },
+  "kidney-beans": {
+    "source": "wikimedia-commons",
+    "from": "black-beans",
+    "license": "CC0 or public domain",
+    "url": "https://commons.wikimedia.org/w/thumb.php?width=330&f=Green_soda_can_3d.svg"
+  },
+  "tomatoes-canned": {
+    "source": "wikimedia-commons",
+    "from": "black-beans",
+    "license": "CC0 or public domain",
+    "url": "https://commons.wikimedia.org/w/thumb.php?width=330&f=Green_soda_can_3d.svg"
+  },
+  "tomato-sauce": {
+    "source": "wikimedia-commons",
+    "from": "black-beans",
+    "license": "CC0 or public domain",
+    "url": "https://commons.wikimedia.org/w/thumb.php?width=330&f=Green_soda_can_3d.svg"
+  },
+  "chicken-soup": {
+    "source": "wikimedia-commons",
+    "from": "black-beans",
+    "license": "CC0 or public domain",
+    "url": "https://commons.wikimedia.org/w/thumb.php?width=330&f=Green_soda_can_3d.svg"
+  },
+  "vegetable-soup": {
+    "source": "wikimedia-commons",
+    "from": "black-beans",
+    "license": "CC0 or public domain",
+    "url": "https://commons.wikimedia.org/w/thumb.php?width=330&f=Green_soda_can_3d.svg"
+  },
+  "corn-canned": {
+    "source": "wikimedia-commons",
+    "from": "black-beans",
+    "license": "CC0 or public domain",
+    "url": "https://commons.wikimedia.org/w/thumb.php?width=330&f=Green_soda_can_3d.svg"
+  },
+  "green-beans-canned": {
+    "source": "wikimedia-commons",
+    "from": "black-beans",
+    "license": "CC0 or public domain",
+    "url": "https://commons.wikimedia.org/w/thumb.php?width=330&f=Green_soda_can_3d.svg"
+  },
+  "tea": {
+    "source": "opengameart-bluecarrot16",
+    "from": "coffee",
+    "license": "CC0",
+    "file": "orig/misc/coffee_beans.png"
+  },
+  "juice-orange": {
+    "source": "wikimedia-commons",
+    "from": "juice-apple",
+    "license": "CC0 or public domain",
+    "url": "https://commons.wikimedia.org/w/thumb.php?width=330&f=Honey_Jar_icon.svg"
+  },
+  "applesauce": {
+    "source": "wikimedia-commons",
+    "from": "apples",
+    "license": "CC0 or public domain",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/9/91/Green_Apple_Icon.png"
+  }
+}

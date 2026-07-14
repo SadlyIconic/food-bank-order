@@ -1,41 +1,51 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}Food Bank Order{% endblock %}</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  {% block head %}{% endblock %}
-</head>
-<body>
-  <header class="site-header">
-    <div class="container header-inner">
-      <a href="{{ url_for('shop') }}" class="logo">Food Bank Order</a>
-      <nav>
-        <a href="{{ url_for('shop') }}">Shop</a>
-        <a href="{{ url_for('cart') }}" class="cart-link">
-          Cart <span id="cart-badge" class="cart-badge" hidden>0</span>
-        </a>
-        <a href="{{ url_for('admin_login') }}">Admin</a>
-      </nav>
-    </div>
-  </header>
-
-  <main class="container">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <ul class="flash-list">
-          {% for category, message in messages %}
-            <li class="flash flash-{{ category }}">{{ message }}</li>
-          {% endfor %}
-        </ul>
-      {% endif %}
-    {% endwith %}
-
-    {% block content %}{% endblock %}
-  </main>
-
-  <script src="{{ url_for('static', filename='shop.js') }}"></script>
-  {% block scripts %}{% endblock %}
-</body>
-</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Food Bank Order{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="{{ url_for('shop') }}" class="logo" data-i18n="app_name">Food Bank Order</a>
+      <nav>
+        <a href="{{ url_for('shop') }}" data-i18n="nav_shop">Shop</a>
+        <a href="{{ url_for('cart') }}" class="cart-link">
+          <span data-i18n="nav_cart">Cart</span> <span id="cart-badge" class="cart-badge" hidden>0</span>
+        </a>
+        <span id="cart-weight-badge" class="cart-weight-badge" hidden>0 / 10 lb</span>
+        <span id="order-weight-limit" hidden>{{ order_weight_limit_lb | default(10) }}</span>
+        <a href="{{ url_for('household_status') }}" data-i18n="nav_status">Status</a>
+        <a href="{{ url_for('admin_login') }}" data-i18n="nav_admin">Admin</a>
+      </nav>
+    </div>
+    <div class="lang-bar-wrap">
+      <div class="container">
+        <div id="lang-bar" class="lang-bar"></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <ul class="flash-list">
+          {% for category, message in messages %}
+            <li class="flash flash-{{ category }}">{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <script src="{{ url_for('static', filename='i18n.js') }}"></script>
+  <script src="{{ url_for('static', filename='shop.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
+

@@ -1,0 +1,6 @@
+# SQLite database and runtime data (gitignored)
+data/
+*.db
+
+# Icon download cache (OpenGameArt zips/extracts)
+scripts/_tmp_oga/

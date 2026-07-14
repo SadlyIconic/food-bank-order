@@ -5,17 +5,17 @@
 {% block content %}
 <div class="page-header">
   <div>
-    <h1>Shop</h1>
-    <p class="page-subtitle">Browse items and add them to your cart.</p>
+    <h1 data-i18n="shop_title">Shop</h1>
+    <p class="page-subtitle" data-i18n="shop_subtitle" data-i18n-limit="{{ order_weight_limit_lb | default(10) }}">Browse items and add them to your cart ({{ order_weight_limit_lb | default(10) }} lb limit per order).</p>
   </div>
 </div>
 
 <div class="shop-controls">
-  <label class="search-label" for="item-search">Search</label>
-  <input type="search" id="item-search" placeholder="Search by name…" autocomplete="off">
+  <label class="search-label" for="item-search" data-i18n="search">Search</label>
+  <input type="search" id="item-search" data-i18n-placeholder="search_placeholder" placeholder="Search by name…" autocomplete="off">
 
   <div class="category-tabs" id="category-tabs" role="tablist">
-    <button type="button" class="category-tab active" data-category="all" role="tab">All</button>
+    <button type="button" class="category-tab active" data-category="all" role="tab" data-i18n="all">All</button>
     {% for category in categories %}
       <button type="button" class="category-tab" data-category="{{ category }}" role="tab">{{ category }}</button>
     {% endfor %}
@@ -30,27 +30,37 @@
       data-name="{{ item.name | lower }}"
       data-category="{{ item.category }}"
     >
+      <img
+        class="item-image"
+        src="{{ url_for('static', filename='images/items/' + item.id + '.svg') }}"
+        alt=""
+        loading="lazy"
+        width="64"
+        height="64"
+      >
       <div class="item-card-body">
         <span class="item-category">{{ item.category }}</span>
-        <h2 class="item-name">{{ item.name }}</h2>
-        <p class="item-unit">per {{ item.unit }}</p>
+        <h2 class="item-name" data-name-en="{{ item.name }}">{{ item.name }}</h2>
+        <p class="item-unit" data-unit="{{ item.unit }}" data-weight="{{ '%.1f' | format(item.weight_lb) }}">per {{ item.unit }} · {{ '%.1f' | format(item.weight_lb) }} lb</p>
       </div>
       <div class="item-card-actions">
         <div class="qty-stepper">
-          <button type="button" class="qty-btn qty-minus" aria-label="Decrease quantity">−</button>
-          <input type="number" class="qty-input" value="1" min="1" aria-label="Quantity">
-          <button type="button" class="qty-btn qty-plus" aria-label="Increase quantity">+</button>
+          <button type="button" class="qty-btn qty-minus" data-i18n-aria="decrease" aria-label="Decrease quantity">−</button>
+          <input type="number" class="qty-input" value="1" min="1" data-i18n-aria="quantity" aria-label="Quantity">
+          <button type="button" class="qty-btn qty-plus" data-i18n-aria="increase" aria-label="Increase quantity">+</button>
         </div>
-        <button type="button" class="btn btn-primary add-to-cart-btn">Add to cart</button>
+        <button type="button" class="btn btn-primary add-to-cart-btn" data-i18n="add_to_cart">Add to cart</button>
       </div>
     </article>
   {% endfor %}
 </div>
 
 <div class="empty-state" id="shop-empty" hidden>
-  <p>No items match your search or filter.</p>
-  <button type="button" class="btn" id="clear-filters-btn">Clear filters</button>
+  <p data-i18n="shop_empty">No items match your search or filter.</p>
+  <button type="button" class="btn" id="clear-filters-btn" data-i18n="clear_filters">Clear filters</button>
 </div>
+
+<script type="application/json" id="catalog-data">{{ items | tojson }}</script>
 {% endblock %}
 
 {% block scripts %}
@@ -60,3 +70,4 @@
   });
 </script>
 {% endblock %}
+

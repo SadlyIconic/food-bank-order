@@ -8,20 +8,33 @@
     <h1>Past round</h1>
     <p class="page-subtitle">
       Archived {{ round_entry.archived_at[:10] }} — {{ round_entry.order_count }} orders
+      {% if round_entry.demand_weight_lb %} · {{ '%.0f' | format(round_entry.demand_weight_lb) }} lb demand{% endif %}
     </p>
   </div>
   <a href="{{ url_for('admin_dashboard', tab='history') }}" class="btn">Back to past rounds</a>
 </div>
 
+{% if round_entry.trip %}
+  <div class="card">
+    <p class="meta">
+      {% if round_entry.trip.trip_name %}{{ round_entry.trip.trip_name }}{% endif %}
+      {% if round_entry.trip.pickup_date %} · Pickup {{ round_entry.trip.pickup_date }}{% endif %}
+      {% if round_entry.trip.weight_limit_lb %} · Limit {{ round_entry.trip.weight_limit_lb | int }} lb{% endif %}
+    </p>
+  </div>
+{% endif %}
+
 {% if round_entry.totals %}
   <div class="card">
+    <h2 class="card-title">Requested totals</h2>
     <table class="data-table">
       <thead>
         <tr>
           <th>#</th>
           <th>Item</th>
           <th>Category</th>
-          <th class="num-col">Total</th>
+          <th class="num-col">Qty</th>
+          <th class="num-col">Total wt</th>
           <th>Unit</th>
         </tr>
       </thead>
@@ -32,15 +45,38 @@
             <td>{{ row.name }}</td>
             <td>{{ row.category }}</td>
             <td class="num-col"><strong>{{ row.quantity }}</strong></td>
+            <td class="num-col">{{ '%.1f' | format(row.total_weight_lb | default(0)) }} lb</td>
             <td>{{ row.unit }}</td>
           </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
-{% else %}
-  <div class="empty-state">
-    <p>This round has no item totals.</p>
+{% endif %}
+
+{% if round_entry.fulfillment and round_entry.fulfillment.items %}
+  <div class="card">
+    <h2 class="card-title">Fulfillment &amp; shortfalls</h2>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th class="num-col">Requested</th>
+          <th class="num-col">Picked</th>
+          <th class="num-col">Shortfall</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in round_entry.fulfillment.items %}
+          <tr class="{% if row.shortfall > 0 %}row-shortfall{% endif %}">
+            <td>{{ row.name }}</td>
+            <td class="num-col">{{ row.requested }}</td>
+            <td class="num-col">{{ row.picked }}</td>
+            <td class="num-col">{{ row.shortfall }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
 {% endif %}
 {% endblock %}
