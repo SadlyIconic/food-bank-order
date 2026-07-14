@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Store inventory — Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Store surplus inventory</h1>
+    <p class="page-subtitle">Enter what the store has available today (qty, weight from catalog, expiry).</p>
+  </div>
+  <a href="{{ url_for('admin_dashboard') }}" class="btn">Back to dashboard</a>
+</div>
+
+<form method="post" action="{{ url_for('admin_inventory') }}">
+  <div class="card">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="store_name">Store name</label>
+        <input type="text" id="store_name" name="store_name" value="{{ inventory.store_name or trip.store_name }}" placeholder="Store name">
+      </div>
+      <div class="form-group">
+        <label for="expires_by">Offer expires</label>
+        <input type="date" id="expires_by" name="expires_by" value="{{ inventory.expires_by }}">
+      </div>
+    </div>
+    {% if inventory.updated_at %}
+      <p class="meta">Last updated: {{ inventory.updated_at[:10] }} {{ inventory.updated_at[11:16] }} UTC</p>
+    {% endif %}
+  </div>
+
+  <div class="card inventory-table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Category</th>
+          <th class="num-col">Unit wt</th>
+          <th class="num-col">Available qty</th>
+          <th>Expires</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+          {% set inv = inv_map.get(item.id, {}) %}
+          <tr>
+            <td>{{ item.name }}</td>
+            <td>{{ item.category }}</td>
+            <td class="num-col">{{ '%.1f' | format(item.weight_lb) }} lb</td>
+            <td class="num-col">
+              <input
+                type="number"
+                name="qty_{{ item.id }}"
+                value="{{ inv.available_qty if inv else '' }}"
+                min="0"
+                class="qty-input-inline"
+                placeholder="0"
+              >
+            </td>
+            <td>
+              <input
+                type="date"
+                name="expires_{{ item.id }}"
+                value="{{ inv.expires_at[:10] if inv.expires_at else '' }}"
+                class="date-input-inline"
+              >
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="form-actions">
+    <button type="submit" class="btn btn-primary">Save inventory</button>
+    <a href="{{ url_for('admin_plan') }}" class="btn">Go to planner →</a>
+  </div>
+</form>
+{% endblock %}

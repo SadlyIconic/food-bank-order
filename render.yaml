@@ -6,3 +6,14 @@ services:
     rootDir: food_bank
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: DATABASE_PATH
+        value: /var/data/food_bank.db
+    disk:
+      name: food-bank-data
+      mountPath: /var/data
+      sizeGB: 1

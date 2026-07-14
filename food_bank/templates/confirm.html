@@ -1,49 +1,103 @@
 {% extends "base.html" %}
 
+
+
 {% block title %}Confirm order — Food Bank Order{% endblock %}
 
+
+
 {% block content %}
+
 <div class="page-header">
+
   <div>
-    <h1>Confirm your order</h1>
-    <p class="page-subtitle">Check everything looks right, then place your order.</p>
+
+    <h1 data-i18n="confirm_title">Confirm your order</h1>
+
+    <p class="page-subtitle" data-i18n="confirm_subtitle">Check everything looks right, then place your order.</p>
+
   </div>
+
 </div>
+
+
 
 <div id="confirm-content" hidden>
+
   <div class="card">
+
     <p id="confirm-household" class="confirm-household" hidden></p>
+
     <table class="data-table">
+
       <thead>
+
         <tr>
-          <th>Item</th>
-          <th>Quantity</th>
+
+          <th data-i18n="item_col">Item</th>
+
+          <th data-i18n="quantity">Quantity</th>
+
         </tr>
+
       </thead>
+
       <tbody id="confirm-lines"></tbody>
+
     </table>
+
   </div>
 
+
+
   <form class="form-actions confirm-actions" action="{{ url_for('submit_order') }}" method="post" id="place-order-form">
+
     <input type="hidden" name="household_name" id="household_name_hidden" value="">
+
     <input type="hidden" name="cart_json" id="cart_json_hidden" value="">
-    <a href="{{ url_for('cart') }}" class="btn">Back to cart</a>
-    <button type="submit" class="btn btn-primary">Place order</button>
+
+    <a href="{{ url_for('cart') }}" class="btn" data-i18n="back_to_cart">Back to cart</a>
+
+    <button type="submit" class="btn btn-primary" id="place-order-btn" data-i18n="place_order">Place order</button>
+
   </form>
+
 </div>
+
+
 
 <div class="empty-state" id="confirm-empty">
-  <p>Nothing to confirm — your cart is empty.</p>
-  <a href="{{ url_for('shop') }}" class="btn btn-primary">Go to shop</a>
+
+  <p data-i18n="confirm_empty">Nothing to confirm — your cart is empty.</p>
+
+  <a href="{{ url_for('shop') }}" class="btn btn-primary" data-i18n="go_to_shop">Go to shop</a>
+
 </div>
 
+
+
+<span id="order-weight-limit" hidden>{{ order_weight_limit_lb }}</span>
+
+<span id="cart-weight-badge" class="cart-weight-badge inline-weight" hidden></span>
+
 <script type="application/json" id="catalog-data">{{ items | tojson }}</script>
+
 {% endblock %}
 
+
+
 {% block scripts %}
+
 <script>
+
   document.addEventListener("DOMContentLoaded", () => {
+
     FoodBankCart.initConfirmPage();
+
   });
+
 </script>
+
 {% endblock %}
+
+

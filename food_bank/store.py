@@ -1,70 +1,167 @@
-"""JSON-backed store for catalog, orders, archive, and aggregation."""
+"""SQLite-backed store for catalog, orders, trip planning, and archive."""
 
 import json
+import os
+import sqlite3
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
 ITEMS_FILE = BASE_DIR / "items.json"
-ORDERS_FILE = BASE_DIR / "orders.json"
-ARCHIVE_FILE = BASE_DIR / "archive.json"
+DB_PATH = Path(os.environ.get("DATABASE_PATH", str(BASE_DIR / "data" / "food_bank.db")))
 
-ITEMS: list[dict] = []
-ORDERS: list[dict] = []
-ARCHIVE: list[dict] = []
+# Legacy JSON paths (migrated on first init)
+LEGACY_ORDERS_FILE = BASE_DIR / "orders.json"
+LEGACY_ARCHIVE_FILE = BASE_DIR / "archive.json"
+LEGACY_TRIP_FILE = BASE_DIR / "trip.json"
+LEGACY_INVENTORY_FILE = BASE_DIR / "store_inventory.json"
+LEGACY_SELECTION_FILE = BASE_DIR / "selection.json"
+LEGACY_FULFILLMENT_FILE = BASE_DIR / "fulfillment.json"
 
-_mtime: dict[Path, float | None] = {
-    ITEMS_FILE: None,
-    ORDERS_FILE: None,
-    ARCHIVE_FILE: None,
+DEFAULT_TRIP = {
+    "weight_limit_lb": 200.0,
+    "order_weight_limit_lb": 10.0,
+    "trip_name": "",
+    "pickup_date": "",
+    "store_name": "",
 }
 
+ITEMS: list[dict] = []
+_items_mtime: float | None = None
 
-def _read_json(path: Path, default: list) -> list:
+
+def _utc_now() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _read_json(path: Path, default):
     if path.exists():
         with open(path, encoding="utf-8") as f:
             return json.load(f)
-    return default.copy() if isinstance(default, list) else default
+    return default.copy() if isinstance(default, (list, dict)) else default
 
 
-def _write_json(path: Path, data: list) -> None:
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2)
-    _mtime[path] = path.stat().st_mtime
+def _get_conn() -> sqlite3.Connection:
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
 
 
-def _ensure_fresh(path: Path, cache: list, default: list) -> list:
-    if not path.exists():
-        if cache:
-            cache.clear()
-        _mtime[path] = None
-        return cache
-    mtime = path.stat().st_mtime
-    if _mtime[path] is None or mtime != _mtime[path]:
-        fresh = _read_json(path, default)
-        cache.clear()
-        cache.extend(fresh)
-        _mtime[path] = mtime
-    return cache
+def _init_schema(conn: sqlite3.Connection) -> None:
+    conn.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS orders (
+            id TEXT PRIMARY KEY,
+            created_at TEXT NOT NULL,
+            household_name TEXT NOT NULL,
+            lines_json TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS archive_rounds (
+            id TEXT PRIMARY KEY,
+            archived_at TEXT NOT NULL,
+            order_count INTEGER NOT NULL,
+            totals_json TEXT NOT NULL,
+            demand_weight_lb REAL DEFAULT 0,
+            trip_json TEXT,
+            store_inventory_json TEXT,
+            selection_json TEXT,
+            fulfillment_json TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS kv_store (
+            key TEXT PRIMARY KEY,
+            value_json TEXT NOT NULL
+        );
+        """
+    )
+    conn.commit()
+
+
+def _kv_get(conn: sqlite3.Connection, key: str, default):
+    row = conn.execute("SELECT value_json FROM kv_store WHERE key = ?", (key,)).fetchone()
+    if row is None:
+        return default.copy() if isinstance(default, (list, dict)) else default
+    return json.loads(row["value_json"])
+
+
+def _kv_set(conn: sqlite3.Connection, key: str, value) -> None:
+    conn.execute(
+        "INSERT INTO kv_store (key, value_json) VALUES (?, ?) "
+        "ON CONFLICT(key) DO UPDATE SET value_json = excluded.value_json",
+        (key, json.dumps(value)),
+    )
+
+
+def _migrate_legacy_json(conn: sqlite3.Connection) -> None:
+    order_count = conn.execute("SELECT COUNT(*) FROM orders").fetchone()[0]
+    if order_count == 0 and LEGACY_ORDERS_FILE.exists():
+        for order in _read_json(LEGACY_ORDERS_FILE, []):
+            conn.execute(
+                "INSERT INTO orders (id, created_at, household_name, lines_json) VALUES (?, ?, ?, ?)",
+                (
+                    order.get("id", str(uuid.uuid4())),
+                    order.get("created_at", _utc_now()),
+                    order.get("household_name", ""),
+                    json.dumps(order.get("lines", [])),
+                ),
+            )
+
+    archive_count = conn.execute("SELECT COUNT(*) FROM archive_rounds").fetchone()[0]
+    if archive_count == 0 and LEGACY_ARCHIVE_FILE.exists():
+        for entry in _read_json(LEGACY_ARCHIVE_FILE, []):
+            conn.execute(
+                """INSERT INTO archive_rounds
+                   (id, archived_at, order_count, totals_json, demand_weight_lb)
+                   VALUES (?, ?, ?, ?, ?)""",
+                (
+                    entry.get("id", str(uuid.uuid4())),
+                    entry.get("archived_at", _utc_now()),
+                    entry.get("order_count", 0),
+                    json.dumps(entry.get("totals", [])),
+                    entry.get("demand_weight_lb", 0),
+                ),
+            )
+
+    if conn.execute("SELECT COUNT(*) FROM kv_store WHERE key = 'trip'").fetchone()[0] == 0:
+        if LEGACY_TRIP_FILE.exists():
+            _kv_set(conn, "trip", _read_json(LEGACY_TRIP_FILE, DEFAULT_TRIP))
+        else:
+            _kv_set(conn, "trip", DEFAULT_TRIP)
+
+    for key, path, default in (
+        ("store_inventory", LEGACY_INVENTORY_FILE, {"lines": []}),
+        ("selection", LEGACY_SELECTION_FILE, {"lines": [], "total_weight_lb": 0}),
+        ("fulfillment", LEGACY_FULFILLMENT_FILE, {"items": [], "households": []}),
+    ):
+        if conn.execute("SELECT COUNT(*) FROM kv_store WHERE key = ?", (key,)).fetchone()[0] == 0:
+            if path.exists():
+                _kv_set(conn, key, _read_json(path, default))
+            else:
+                _kv_set(conn, key, default)
+
+    conn.commit()
 
 
 def load() -> None:
-    """Load all data files into memory."""
-    global ITEMS, ORDERS, ARCHIVE
+    """Initialize database and load catalog."""
+    global ITEMS, _items_mtime
+    with _get_conn() as conn:
+        _init_schema(conn)
+        _migrate_legacy_json(conn)
     ITEMS = _read_json(ITEMS_FILE, [])
-    ORDERS = _read_json(ORDERS_FILE, [])
-    ARCHIVE = _read_json(ARCHIVE_FILE, [])
-    for path, data in (
-        (ITEMS_FILE, ITEMS),
-        (ORDERS_FILE, ORDERS),
-        (ARCHIVE_FILE, ARCHIVE),
-    ):
-        _mtime[path] = path.stat().st_mtime if path.exists() else None
+    _items_mtime = ITEMS_FILE.stat().st_mtime if ITEMS_FILE.exists() else None
 
 
 def get_items() -> list[dict]:
-    _ensure_fresh(ITEMS_FILE, ITEMS, [])
+    global ITEMS, _items_mtime
+    if ITEMS_FILE.exists():
+        mtime = ITEMS_FILE.stat().st_mtime
+        if _items_mtime is None or mtime != _items_mtime:
+            ITEMS = _read_json(ITEMS_FILE, [])
+            _items_mtime = mtime
     return ITEMS
 
 
@@ -73,35 +170,102 @@ def get_item_map() -> dict[str, dict]:
 
 
 def get_categories() -> list[str]:
-    items = get_items()
     seen: list[str] = []
-    for item in items:
+    for item in get_items():
         cat = item.get("category", "")
         if cat and cat not in seen:
             seen.append(cat)
     return seen
 
 
+def item_weight_lb(item_id: str) -> float:
+    catalog = get_item_map().get(item_id, {})
+    return float(catalog.get("weight_lb", 0) or 0)
+
+
+def compute_lines_weight(lines: list[dict]) -> float:
+    total = 0.0
+    for line in lines:
+        qty = line.get("quantity", 0)
+        try:
+            qty = int(qty)
+        except (TypeError, ValueError):
+            continue
+        if qty < 1:
+            continue
+        total += qty * item_weight_lb(line.get("item_id", ""))
+    return round(total, 2)
+
+
+def get_trip_settings() -> dict:
+    with _get_conn() as conn:
+        trip = _kv_get(conn, "trip", DEFAULT_TRIP)
+    for key, val in DEFAULT_TRIP.items():
+        trip.setdefault(key, val)
+    return trip
+
+
+def save_trip_settings(settings: dict) -> dict:
+    trip = get_trip_settings()
+    trip.update(settings)
+    with _get_conn() as conn:
+        _kv_set(conn, "trip", trip)
+        conn.commit()
+    return trip
+
+
+def get_order_weight_limit_lb() -> float:
+    return float(get_trip_settings().get("order_weight_limit_lb", 10))
+
+
+def get_weight_limit_lb() -> float:
+    return float(get_trip_settings().get("weight_limit_lb", 200))
+
+
 def get_orders() -> list[dict]:
-    _ensure_fresh(ORDERS_FILE, ORDERS, [])
-    return ORDERS
+    with _get_conn() as conn:
+        rows = conn.execute(
+            "SELECT id, created_at, household_name, lines_json FROM orders ORDER BY created_at"
+        ).fetchall()
+    orders = []
+    for row in rows:
+        orders.append(
+            {
+                "id": row["id"],
+                "created_at": row["created_at"],
+                "household_name": row["household_name"],
+                "lines": json.loads(row["lines_json"]),
+            }
+        )
+    return orders
 
 
 def add_order(household_name: str, lines: list[dict]) -> dict:
-    _ensure_fresh(ORDERS_FILE, ORDERS, [])
     order = {
         "id": str(uuid.uuid4()),
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": _utc_now(),
         "household_name": household_name,
         "lines": lines,
     }
-    ORDERS.append(order)
-    _write_json(ORDERS_FILE, ORDERS)
+    with _get_conn() as conn:
+        conn.execute(
+            "INSERT INTO orders (id, created_at, household_name, lines_json) VALUES (?, ?, ?, ?)",
+            (order["id"], order["created_at"], household_name, json.dumps(lines)),
+        )
+        conn.commit()
     return order
 
 
-def aggregate_totals(orders: list[dict] | None = None) -> list[dict]:
-    """Sum quantities by item_id; sort descending; attach catalog metadata."""
+def line_name_from_orders(orders: list[dict], item_id: str) -> str:
+    for order in orders:
+        for line in order.get("lines", []):
+            if line.get("item_id") == item_id:
+                return line.get("name", item_id)
+    return item_id
+
+
+def aggregate_totals(orders: list[dict] | None = None, sort_mode: str = "demand") -> list[dict]:
+    """Sum quantities by item_id with weight metadata."""
     if orders is None:
         orders = get_orders()
     item_map = get_item_map()
@@ -116,6 +280,7 @@ def aggregate_totals(orders: list[dict] | None = None) -> list[dict]:
     rows: list[dict] = []
     for item_id, quantity in totals.items():
         catalog = item_map.get(item_id, {})
+        weight_lb = float(catalog.get("weight_lb", 0) or 0)
         rows.append(
             {
                 "item_id": item_id,
@@ -123,47 +288,401 @@ def aggregate_totals(orders: list[dict] | None = None) -> list[dict]:
                 "category": catalog.get("category", ""),
                 "unit": catalog.get("unit", ""),
                 "quantity": quantity,
+                "weight_lb": weight_lb,
+                "total_weight_lb": round(quantity * weight_lb, 2),
             }
         )
-    rows.sort(key=lambda r: r["quantity"], reverse=True)
+
+    if sort_mode == "weight":
+        rows.sort(key=lambda r: r["total_weight_lb"], reverse=True)
+    else:
+        rows.sort(key=lambda r: r["quantity"], reverse=True)
     return rows
 
 
-def line_name_from_orders(orders: list[dict], item_id: str) -> str:
+def demand_weight_lb(orders: list[dict] | None = None) -> float:
+    if orders is None:
+        orders = get_orders()
+    return round(sum(compute_lines_weight(o.get("lines", [])) for o in orders), 2)
+
+
+def orders_with_weight() -> list[dict]:
+    result = []
+    for order in get_orders():
+        weight = compute_lines_weight(order.get("lines", []))
+        result.append({**order, "weight_lb": weight})
+    return result
+
+
+def get_store_inventory() -> dict:
+    with _get_conn() as conn:
+        inv = _kv_get(conn, "store_inventory", {"lines": []})
+    inv.setdefault("updated_at", "")
+    inv.setdefault("store_name", "")
+    inv.setdefault("expires_by", "")
+    inv.setdefault("lines", [])
+    return inv
+
+
+def save_store_inventory(inventory: dict) -> dict:
+    inventory = dict(inventory)
+    inventory["updated_at"] = _utc_now()
+    with _get_conn() as conn:
+        _kv_set(conn, "store_inventory", inventory)
+        conn.commit()
+    return inventory
+
+
+def inventory_map() -> dict[str, dict]:
+    return {line["item_id"]: line for line in get_store_inventory().get("lines", [])}
+
+
+def get_selection() -> dict:
+    with _get_conn() as conn:
+        sel = _kv_get(conn, "selection", {"lines": [], "total_weight_lb": 0})
+    sel.setdefault("lines", [])
+    sel.setdefault("total_weight_lb", 0)
+    sel.setdefault("weight_limit_lb", get_weight_limit_lb())
+    return sel
+
+
+def save_selection(selection: dict) -> dict:
+    selection = dict(selection)
+    selection["weight_limit_lb"] = get_weight_limit_lb()
+    total = 0.0
+    for line in selection.get("lines", []):
+        pick_qty = int(line.get("pick_qty", 0) or 0)
+        weight = float(line.get("weight_lb", item_weight_lb(line.get("item_id", ""))) or 0)
+        line["pick_qty"] = pick_qty
+        line["line_weight_lb"] = round(pick_qty * weight, 2)
+        total += line["line_weight_lb"]
+    selection["total_weight_lb"] = round(total, 2)
+    with _get_conn() as conn:
+        _kv_set(conn, "selection", selection)
+        conn.commit()
+    return selection
+
+
+def _expires_within_24h(expires_at: str) -> bool:
+    if not expires_at:
+        return False
+    try:
+        exp = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
+        if exp.tzinfo is None:
+            exp = exp.replace(tzinfo=timezone.utc)
+        now = datetime.now(timezone.utc)
+        return (exp - now).total_seconds() <= 86400
+    except ValueError:
+        try:
+            exp_date = datetime.strptime(expires_at[:10], "%Y-%m-%d").replace(tzinfo=timezone.utc)
+            now = datetime.now(timezone.utc)
+            return (exp_date - now).total_seconds() <= 86400
+        except ValueError:
+            return False
+
+
+def build_planner_rows() -> list[dict]:
+    """Merge demand, inventory, and selection for the planner UI."""
+    totals = {r["item_id"]: r for r in aggregate_totals()}
+    inv_map = inventory_map()
+    sel_map = {l["item_id"]: l for l in get_selection().get("lines", [])}
+    item_map = get_item_map()
+
+    all_ids = set(totals) | set(inv_map) | set(sel_map)
+    rows = []
+    for item_id in all_ids:
+        catalog = item_map.get(item_id, {})
+        demand = totals.get(item_id, {})
+        inv = inv_map.get(item_id, {})
+        sel = sel_map.get(item_id, {})
+        requested = demand.get("quantity", 0)
+        available = int(inv.get("available_qty", 0) or 0)
+        unit_weight = float(
+            inv.get("weight_lb") or catalog.get("weight_lb") or 0
+        )
+        pick_qty = int(sel.get("pick_qty", 0) or 0)
+        expires_at = inv.get("expires_at", "")
+        rows.append(
+            {
+                "item_id": item_id,
+                "name": catalog.get("name", item_id),
+                "category": catalog.get("category", ""),
+                "unit": catalog.get("unit", ""),
+                "requested": requested,
+                "available_qty": available,
+                "pick_qty": pick_qty,
+                "weight_lb": unit_weight,
+                "line_weight_lb": round(pick_qty * unit_weight, 2),
+                "fill_pct": round(100 * pick_qty / requested, 1) if requested else 0,
+                "expires_at": expires_at,
+                "expires_soon": _expires_within_24h(expires_at),
+            }
+        )
+
+    rows.sort(key=lambda r: r["requested"], reverse=True)
+    return rows
+
+
+def suggest_fill() -> dict:
+    """Greedy fill: prioritize unmet demand, respect weight cap and availability."""
+    weight_limit = get_weight_limit_lb()
+    totals = aggregate_totals()
+    inv_map = inventory_map()
+    remaining_weight = weight_limit
+
+    candidates = []
+    for row in totals:
+        item_id = row["item_id"]
+        requested = row["quantity"]
+        inv = inv_map.get(item_id, {})
+        available = int(inv.get("available_qty", 0) or 0)
+        if available <= 0 or requested <= 0:
+            continue
+        unit_weight = float(
+            inv.get("weight_lb") or row.get("weight_lb") or item_weight_lb(item_id)
+        )
+        if unit_weight <= 0:
+            continue
+        unmet = requested
+        expires_at = inv.get("expires_at", "")
+        candidates.append(
+            {
+                "item_id": item_id,
+                "requested": requested,
+                "available_qty": available,
+                "weight_lb": unit_weight,
+                "unmet": unmet,
+                "expires_soon": _expires_within_24h(expires_at),
+            }
+        )
+
+    candidates.sort(
+        key=lambda c: (c["expires_soon"], c["unmet"]),
+        reverse=True,
+    )
+
+    lines = []
+    for c in candidates:
+        if remaining_weight <= 0:
+            break
+        max_by_weight = int(remaining_weight // c["weight_lb"]) if c["weight_lb"] > 0 else 0
+        pick_qty = min(c["available_qty"], c["requested"], max_by_weight)
+        if pick_qty <= 0:
+            continue
+        line_weight = round(pick_qty * c["weight_lb"], 2)
+        lines.append(
+            {
+                "item_id": c["item_id"],
+                "pick_qty": pick_qty,
+                "weight_lb": c["weight_lb"],
+                "line_weight_lb": line_weight,
+            }
+        )
+        remaining_weight = round(remaining_weight - line_weight, 2)
+
+    return save_selection({"lines": lines, "total_weight_lb": 0, "weight_limit_lb": weight_limit})
+
+
+def compute_fulfillment() -> dict:
+    """Compute item-level and household-level fulfillment from selection vs demand."""
+    totals = {r["item_id"]: r for r in aggregate_totals()}
+    sel_map = {l["item_id"]: l for l in get_selection().get("lines", [])}
+    orders = get_orders()
+    item_map = get_item_map()
+
+    items_result = []
+    picked_by_item: dict[str, int] = {}
+
+    for item_id, demand in totals.items():
+        picked = int(sel_map.get(item_id, {}).get("pick_qty", 0) or 0)
+        requested = demand["quantity"]
+        shortfall = max(0, requested - picked)
+        picked_by_item[item_id] = picked
+        catalog = item_map.get(item_id, {})
+        items_result.append(
+            {
+                "item_id": item_id,
+                "name": demand.get("name", catalog.get("name", item_id)),
+                "requested": requested,
+                "picked": picked,
+                "shortfall": shortfall,
+                "unit": demand.get("unit", catalog.get("unit", "")),
+            }
+        )
+
+    items_result.sort(key=lambda r: r["shortfall"], reverse=True)
+
+    households_result = []
     for order in orders:
+        household_name = order.get("household_name") or "Anonymous"
+        lines_out = []
         for line in order.get("lines", []):
-            if line.get("item_id") == item_id:
-                return line.get("name", item_id)
-    return item_id
+            item_id = line.get("item_id", "")
+            requested = int(line.get("quantity", 0) or 0)
+            total_requested = totals.get(item_id, {}).get("quantity", 0)
+            total_picked = picked_by_item.get(item_id, 0)
+            if total_requested > 0 and total_picked > 0:
+                allocated = min(requested, int(total_picked * requested / total_requested))
+            else:
+                allocated = 0
+            shortfall = max(0, requested - allocated)
+            catalog = item_map.get(item_id, {})
+            lines_out.append(
+                {
+                    "item_id": item_id,
+                    "name": line.get("name", catalog.get("name", item_id)),
+                    "requested": requested,
+                    "allocated": allocated,
+                    "shortfall": shortfall,
+                    "unit": catalog.get("unit", ""),
+                }
+            )
+        households_result.append(
+            {
+                "order_id": order["id"],
+                "household_name": household_name,
+                "lines": lines_out,
+            }
+        )
+
+    return {"items": items_result, "households": households_result, "computed_at": _utc_now()}
+
+
+def get_fulfillment() -> dict:
+    with _get_conn() as conn:
+        data = _kv_get(conn, "fulfillment", {"items": [], "households": []})
+    data.setdefault("items", [])
+    data.setdefault("households", [])
+    return data
+
+
+def save_fulfillment(fulfillment: dict | None = None) -> dict:
+    if fulfillment is None:
+        fulfillment = compute_fulfillment()
+    with _get_conn() as conn:
+        _kv_set(conn, "fulfillment", fulfillment)
+        conn.commit()
+    return fulfillment
+
+
+def lookup_household_status(household_name: str) -> dict | None:
+    """Find fulfillment for a household in current round."""
+    name = household_name.strip().lower()
+    if not name:
+        return None
+    fulfillment = get_fulfillment()
+    if not fulfillment.get("households"):
+        fulfillment = compute_fulfillment()
+    for hh in fulfillment.get("households", []):
+        if (hh.get("household_name") or "").strip().lower() == name:
+            return {
+                "household_name": hh["household_name"],
+                "lines": hh["lines"],
+                "trip": get_trip_settings(),
+                "has_fulfillment": bool(get_selection().get("lines")),
+            }
+    return None
 
 
 def archive_current_round() -> dict | None:
-    """Archive aggregated totals for the current round and clear orders."""
-    _ensure_fresh(ORDERS_FILE, ORDERS, [])
-    if not ORDERS:
+    """Archive current round with fulfillment data and clear working state."""
+    orders = get_orders()
+    if not orders:
         return None
-    totals = aggregate_totals(ORDERS)
+
+    fulfillment = save_fulfillment()
+    totals = aggregate_totals(orders)
+    demand_wt = demand_weight_lb(orders)
+    trip = get_trip_settings()
+    inventory = get_store_inventory()
+    selection = get_selection()
+
     round_entry = {
         "id": str(uuid.uuid4()),
-        "archived_at": datetime.now(timezone.utc).isoformat(),
-        "order_count": len(ORDERS),
+        "archived_at": _utc_now(),
+        "order_count": len(orders),
         "totals": totals,
+        "demand_weight_lb": demand_wt,
+        "trip": trip,
+        "store_inventory": inventory,
+        "selection": selection,
+        "fulfillment": fulfillment,
     }
-    _ensure_fresh(ARCHIVE_FILE, ARCHIVE, [])
-    ARCHIVE.append(round_entry)
-    _write_json(ARCHIVE_FILE, ARCHIVE)
-    ORDERS.clear()
-    _write_json(ORDERS_FILE, ORDERS)
+
+    with _get_conn() as conn:
+        conn.execute(
+            """INSERT INTO archive_rounds
+               (id, archived_at, order_count, totals_json, demand_weight_lb,
+                trip_json, store_inventory_json, selection_json, fulfillment_json)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                round_entry["id"],
+                round_entry["archived_at"],
+                round_entry["order_count"],
+                json.dumps(totals),
+                demand_wt,
+                json.dumps(trip),
+                json.dumps(inventory),
+                json.dumps(selection),
+                json.dumps(fulfillment),
+            ),
+        )
+        conn.execute("DELETE FROM orders")
+        _kv_set(conn, "store_inventory", {"lines": [], "updated_at": "", "store_name": "", "expires_by": ""})
+        _kv_set(conn, "selection", {"lines": [], "total_weight_lb": 0})
+        _kv_set(conn, "fulfillment", {"items": [], "households": []})
+        conn.commit()
+
     return round_entry
 
 
 def get_archive() -> list[dict]:
-    _ensure_fresh(ARCHIVE_FILE, ARCHIVE, [])
-    return sorted(ARCHIVE, key=lambda r: r.get("archived_at", ""), reverse=True)
+    with _get_conn() as conn:
+        rows = conn.execute(
+            """SELECT id, archived_at, order_count, totals_json, demand_weight_lb,
+                      trip_json, store_inventory_json, selection_json, fulfillment_json
+               FROM archive_rounds ORDER BY archived_at DESC"""
+        ).fetchall()
+    result = []
+    for row in rows:
+        entry = {
+            "id": row["id"],
+            "archived_at": row["archived_at"],
+            "order_count": row["order_count"],
+            "totals": json.loads(row["totals_json"]),
+            "demand_weight_lb": row["demand_weight_lb"] or 0,
+        }
+        if row["trip_json"]:
+            entry["trip"] = json.loads(row["trip_json"])
+        if row["fulfillment_json"]:
+            entry["fulfillment"] = json.loads(row["fulfillment_json"])
+        result.append(entry)
+    return result
 
 
 def get_archive_round(round_id: str) -> dict | None:
-    for entry in get_archive():
-        if entry["id"] == round_id:
-            return entry
-    return None
+    with _get_conn() as conn:
+        row = conn.execute(
+            """SELECT id, archived_at, order_count, totals_json, demand_weight_lb,
+                      trip_json, store_inventory_json, selection_json, fulfillment_json
+               FROM archive_rounds WHERE id = ?""",
+            (round_id,),
+        ).fetchone()
+    if row is None:
+        return None
+    entry = {
+        "id": row["id"],
+        "archived_at": row["archived_at"],
+        "order_count": row["order_count"],
+        "totals": json.loads(row["totals_json"]),
+        "demand_weight_lb": row["demand_weight_lb"] or 0,
+    }
+    if row["trip_json"]:
+        entry["trip"] = json.loads(row["trip_json"])
+    if row["store_inventory_json"]:
+        entry["store_inventory"] = json.loads(row["store_inventory_json"])
+    if row["selection_json"]:
+        entry["selection"] = json.loads(row["selection_json"])
+    if row["fulfillment_json"]:
+        entry["fulfillment"] = json.loads(row["fulfillment_json"])
+    return entry
