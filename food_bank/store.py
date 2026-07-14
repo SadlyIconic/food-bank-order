@@ -1,15 +1,14 @@
-"""SQLite-backed store for catalog, orders, trip planning, and archive."""
+"""Store for catalog, orders, trip planning, and archive (SQLite or Turso)."""
 
 import json
-import os
-import sqlite3
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
+from db import get_conn
+
 BASE_DIR = Path(__file__).resolve().parent
 ITEMS_FILE = BASE_DIR / "items.json"
-DB_PATH = Path(os.environ.get("DATABASE_PATH", str(BASE_DIR / "data" / "food_bank.db")))
 
 # Legacy JSON paths (migrated on first init)
 LEGACY_ORDERS_FILE = BASE_DIR / "orders.json"
@@ -42,14 +41,7 @@ def _read_json(path: Path, default):
     return default.copy() if isinstance(default, (list, dict)) else default
 
 
-def _get_conn() -> sqlite3.Connection:
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
-
-
-def _init_schema(conn: sqlite3.Connection) -> None:
+def _init_schema(conn) -> None:
     conn.executescript(
         """
         CREATE TABLE IF NOT EXISTS orders (
@@ -80,14 +72,14 @@ def _init_schema(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
-def _kv_get(conn: sqlite3.Connection, key: str, default):
+def _kv_get(conn, key: str, default):
     row = conn.execute("SELECT value_json FROM kv_store WHERE key = ?", (key,)).fetchone()
     if row is None:
         return default.copy() if isinstance(default, (list, dict)) else default
     return json.loads(row["value_json"])
 
 
-def _kv_set(conn: sqlite3.Connection, key: str, value) -> None:
+def _kv_set(conn, key: str, value) -> None:
     conn.execute(
         "INSERT INTO kv_store (key, value_json) VALUES (?, ?) "
         "ON CONFLICT(key) DO UPDATE SET value_json = excluded.value_json",
@@ -95,7 +87,7 @@ def _kv_set(conn: sqlite3.Connection, key: str, value) -> None:
     )
 
 
-def _migrate_legacy_json(conn: sqlite3.Connection) -> None:
+def _migrate_legacy_json(conn) -> None:
     order_count = conn.execute("SELECT COUNT(*) FROM orders").fetchone()[0]
     if order_count == 0 and LEGACY_ORDERS_FILE.exists():
         for order in _read_json(LEGACY_ORDERS_FILE, []):
@@ -148,7 +140,7 @@ def _migrate_legacy_json(conn: sqlite3.Connection) -> None:
 def load() -> None:
     """Initialize database and load catalog."""
     global ITEMS, _items_mtime
-    with _get_conn() as conn:
+    with get_conn() as conn:
         _init_schema(conn)
         _migrate_legacy_json(conn)
     ITEMS = _read_json(ITEMS_FILE, [])
@@ -198,7 +190,7 @@ def compute_lines_weight(lines: list[dict]) -> float:
 
 
 def get_trip_settings() -> dict:
-    with _get_conn() as conn:
+    with get_conn() as conn:
         trip = _kv_get(conn, "trip", DEFAULT_TRIP)
     for key, val in DEFAULT_TRIP.items():
         trip.setdefault(key, val)
@@ -208,7 +200,7 @@ def get_trip_settings() -> dict:
 def save_trip_settings(settings: dict) -> dict:
     trip = get_trip_settings()
     trip.update(settings)
-    with _get_conn() as conn:
+    with get_conn() as conn:
         _kv_set(conn, "trip", trip)
         conn.commit()
     return trip
@@ -223,7 +215,7 @@ def get_weight_limit_lb() -> float:
 
 
 def get_orders() -> list[dict]:
-    with _get_conn() as conn:
+    with get_conn() as conn:
         rows = conn.execute(
             "SELECT id, created_at, household_name, lines_json FROM orders ORDER BY created_at"
         ).fetchall()
@@ -247,7 +239,7 @@ def add_order(household_name: str, lines: list[dict]) -> dict:
         "household_name": household_name,
         "lines": lines,
     }
-    with _get_conn() as conn:
+    with get_conn() as conn:
         conn.execute(
             "INSERT INTO orders (id, created_at, household_name, lines_json) VALUES (?, ?, ?, ?)",
             (order["id"], order["created_at"], household_name, json.dumps(lines)),
@@ -315,7 +307,7 @@ def orders_with_weight() -> list[dict]:
 
 
 def get_store_inventory() -> dict:
-    with _get_conn() as conn:
+    with get_conn() as conn:
         inv = _kv_get(conn, "store_inventory", {"lines": []})
     inv.setdefault("updated_at", "")
     inv.setdefault("store_name", "")
@@ -327,7 +319,7 @@ def get_store_inventory() -> dict:
 def save_store_inventory(inventory: dict) -> dict:
     inventory = dict(inventory)
     inventory["updated_at"] = _utc_now()
-    with _get_conn() as conn:
+    with get_conn() as conn:
         _kv_set(conn, "store_inventory", inventory)
         conn.commit()
     return inventory
@@ -338,7 +330,7 @@ def inventory_map() -> dict[str, dict]:
 
 
 def get_selection() -> dict:
-    with _get_conn() as conn:
+    with get_conn() as conn:
         sel = _kv_get(conn, "selection", {"lines": [], "total_weight_lb": 0})
     sel.setdefault("lines", [])
     sel.setdefault("total_weight_lb", 0)
@@ -357,7 +349,7 @@ def save_selection(selection: dict) -> dict:
         line["line_weight_lb"] = round(pick_qty * weight, 2)
         total += line["line_weight_lb"]
     selection["total_weight_lb"] = round(total, 2)
-    with _get_conn() as conn:
+    with get_conn() as conn:
         _kv_set(conn, "selection", selection)
         conn.commit()
     return selection
@@ -549,7 +541,7 @@ def compute_fulfillment() -> dict:
 
 
 def get_fulfillment() -> dict:
-    with _get_conn() as conn:
+    with get_conn() as conn:
         data = _kv_get(conn, "fulfillment", {"items": [], "households": []})
     data.setdefault("items", [])
     data.setdefault("households", [])
@@ -559,7 +551,7 @@ def get_fulfillment() -> dict:
 def save_fulfillment(fulfillment: dict | None = None) -> dict:
     if fulfillment is None:
         fulfillment = compute_fulfillment()
-    with _get_conn() as conn:
+    with get_conn() as conn:
         _kv_set(conn, "fulfillment", fulfillment)
         conn.commit()
     return fulfillment
@@ -609,7 +601,7 @@ def archive_current_round() -> dict | None:
         "fulfillment": fulfillment,
     }
 
-    with _get_conn() as conn:
+    with get_conn() as conn:
         conn.execute(
             """INSERT INTO archive_rounds
                (id, archived_at, order_count, totals_json, demand_weight_lb,
@@ -637,7 +629,7 @@ def archive_current_round() -> dict | None:
 
 
 def get_archive() -> list[dict]:
-    with _get_conn() as conn:
+    with get_conn() as conn:
         rows = conn.execute(
             """SELECT id, archived_at, order_count, totals_json, demand_weight_lb,
                       trip_json, store_inventory_json, selection_json, fulfillment_json
@@ -661,7 +653,7 @@ def get_archive() -> list[dict]:
 
 
 def get_archive_round(round_id: str) -> dict | None:
-    with _get_conn() as conn:
+    with get_conn() as conn:
         row = conn.execute(
             """SELECT id, archived_at, order_count, totals_json, demand_weight_lb,
                       trip_json, store_inventory_json, selection_json, fulfillment_json

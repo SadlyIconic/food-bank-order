@@ -12,7 +12,7 @@ A Flask app for coordinating food bank shopping under a weight limit. Households
 - **Store inventory** — Enter surplus qty and expiry per item
 - **Plan pickup** — Interactive planner with weight bar and greedy “Suggest fill”
 - **Archive** — Rounds include fulfillment shortfalls and trip metadata
-- **SQLite** — Orders and planning data persist across restarts (configurable path)
+- **SQLite / Turso** — Orders and planning data persist (local SQLite in dev, Turso on Render)
 
 ## Requirements
 
@@ -37,9 +37,11 @@ Open [http://127.0.0.1:5000](http://127.0.0.1:5000) to shop. Admin: `/admin`.
 |----------|---------|---------|
 | `SECRET_KEY` | dev placeholder | Flask session signing |
 | `ADMIN_PASSWORD` | `Iconic` | Admin login password |
-| `DATABASE_PATH` | `data/food_bank.db` | SQLite database file |
+| `TURSO_DATABASE_URL` | *(unset)* | Turso database URL (`libsql://...`) for production |
+| `TURSO_AUTH_TOKEN` | *(unset)* | Turso auth token |
+| `DATABASE_PATH` | `data/food_bank.db` | Local SQLite file when Turso is not configured |
 
-For production, set strong values for `SECRET_KEY` and `ADMIN_PASSWORD`.
+For production on Render, set `TURSO_*` variables (see `docs/TURSO_SETUP.md`). For local dev, omit them to use SQLite.
 
 ## Usage
 
@@ -52,14 +54,19 @@ For production, set strong values for `SECRET_KEY` and `ADMIN_PASSWORD`.
 | Source | Purpose |
 |--------|---------|
 | `items.json` | Static catalog with `weight_lb` per package |
-| `data/food_bank.db` | Orders, archive, trip settings, inventory, selection, fulfillment |
+| `data/food_bank.db` | Local SQLite (dev only) |
+| Turso cloud DB | Production persistence on Render free tier |
 | Legacy `orders.json` / `archive.json` | Migrated into SQLite on first run |
 
 ## Deploy on Render (free)
 
 1. Push this repo to GitHub.
-2. Create a **Web Service** (or Blueprint from `render.yaml`).
-3. Set environment variables: `SECRET_KEY`, `ADMIN_PASSWORD`, and optionally `DATABASE_PATH=/var/data/food_bank.db`.
-4. Attach a **persistent disk** mounted at `/var/data` so SQLite survives redeploys.
+2. Create a **Turso** database (free) — step-by-step: [`docs/TURSO_SETUP.md`](docs/TURSO_SETUP.md).
+3. Create a **Web Service** or sync the Blueprint from `render.yaml` (free plan, **no disk**).
+4. In Render, set environment variables:
+   - `TURSO_DATABASE_URL`
+   - `TURSO_AUTH_TOKEN`
+   - `ADMIN_PASSWORD` (choose a strong password)
+   - `SECRET_KEY` (auto-generated is fine)
 
-**Note:** Without a persistent disk, the free plan may reset data on redeploy.
+Data persists in Turso across redeploys. Without `TURSO_*` vars, the app falls back to ephemeral local SQLite and loses data on redeploy.
