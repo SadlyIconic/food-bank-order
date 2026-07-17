@@ -27,13 +27,29 @@ app.config.update(
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "Iconic")
 PLEDGE_COOLDOWN_SECONDS = 60
 
+# Visiting public pages ends the admin login for this browser session.
+PUBLIC_ENDPOINTS = frozenset(
+    {
+        "shop",
+        "cart",
+        "confirm",
+        "submit_order",
+        "household_status",
+        "community_board",
+        "community_pledge",
+    }
+)
+
 store.load()
 
 
 @app.before_request
-def _session_expires_when_browser_closes():
-    """Keep auth in a session cookie only — not persisted after the browser closes."""
+def _manage_admin_session():
+    """Session cookie only (no long-lived persistence). Drop admin auth on public pages."""
     session.permanent = False
+    endpoint = request.endpoint
+    if endpoint in PUBLIC_ENDPOINTS:
+        session.pop("admin_authenticated", None)
 
 
 @app.context_processor
@@ -235,19 +251,18 @@ def community_pledge():
 
 @app.route("/admin", methods=["GET", "POST"])
 def admin_login():
-    if session.get("admin_authenticated"):
+    if request.method == "GET":
+        session.pop("admin_authenticated", None)
+        return render_template("admin_login.html")
+
+    password = request.form.get("password", "")
+    if password == ADMIN_PASSWORD:
+        session.clear()
+        session.permanent = False
+        session["admin_authenticated"] = True
+        flash("Welcome, admin.", "success")
         return redirect(url_for("admin_dashboard"))
-
-    if request.method == "POST":
-        password = request.form.get("password", "")
-        if password == ADMIN_PASSWORD:
-            session.clear()
-            session.permanent = False
-            session["admin_authenticated"] = True
-            flash("Welcome, admin.", "success")
-            return redirect(url_for("admin_dashboard"))
-        flash("Incorrect password.", "error")
-
+    flash("Incorrect password.", "error")
     return render_template("admin_login.html")
 
 
