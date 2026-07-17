@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Staff capacity — Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Staff capacity</h1>
+    <p class="page-subtitle">Set daily category and storage levels to control what appears on the donor board.</p>
+  </div>
+  <div class="header-actions">
+    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-sm">Dashboard</a>
+    <a href="{{ url_for('admin_community') }}" class="btn btn-sm">Community</a>
+    <form method="post" action="{{ url_for('admin_logout') }}" class="inline-form">
+      <button type="submit" class="btn btn-muted">Log out</button>
+    </form>
+  </div>
+</div>
+
+<form method="post" action="{{ url_for('admin_capacity') }}">
+  {% if thresholds.updated_at %}
+    <p class="meta">Last updated: {{ thresholds.updated_at[:10] }} {{ thresholds.updated_at[11:16] }} UTC</p>
+  {% else %}
+    <p class="status-note">Capacity has not been set yet. Save once to enable the community board.</p>
+  {% endif %}
+
+  <div class="card">
+    <h2 class="card-title">Product categories</h2>
+    <p class="meta">Critically low and low categories appear higher on the donor list. High and full are hidden.</p>
+    <table class="data-table capacity-table">
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th>Level</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for category in categories %}
+          <tr>
+            <td>{{ category }}</td>
+            <td>
+              <select name="cat_{{ category }}" class="capacity-select">
+                {% for value, label in level_options %}
+                  <option value="{{ value }}"{% if cat_levels.get(category, 'ok') == value %} selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2 class="card-title">Storage limits</h2>
+    <p class="meta">When storage is full, all items in that type are blocked from the donor board.</p>
+    <table class="data-table capacity-table">
+      <thead>
+        <tr>
+          <th>Storage</th>
+          <th>Level</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for storage_type in storage_types %}
+          <tr>
+            <td>{{ storage_labels[storage_type] }}</td>
+            <td>
+              <select name="storage_{{ storage_type }}" class="capacity-select">
+                {% for value, label in level_options %}
+                  <option value="{{ value }}"{% if storage_levels.get(storage_type, 'ok') == value %} selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="form-actions">
+    <button type="submit" class="btn btn-primary">Save capacity</button>
+  </div>
+</form>
+{% endblock %}

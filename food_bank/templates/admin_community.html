@@ -19,8 +19,8 @@
 
 <div class="summary-cards">
   <div class="summary-card">
-    <span class="summary-label">Fulfillment</span>
-    <span class="summary-value">{{ 'Recorded' if board.has_fulfillment else 'Not yet' }}</span>
+    <span class="summary-label">Capacity</span>
+    <span class="summary-value">{{ 'Set' if board.capacity_set else 'Not yet' }}</span>
   </div>
   <div class="summary-card{% if board.published %} summary-card-warn{% endif %}">
     <span class="summary-label">Published</span>
@@ -38,8 +38,8 @@
 
 <div class="card">
   <h2 class="card-title">Publish controls</h2>
-  {% if not board.has_fulfillment %}
-    <p class="status-note">Record fulfillment on <a href="{{ url_for('admin_plan') }}">Plan pickup</a> before publishing.</p>
+  {% if not board.capacity_set %}
+    <p class="status-note">Set staff capacity on <a href="{{ url_for('admin_capacity') }}">Staff capacity</a> before publishing.</p>
   {% else %}
     <p class="meta">Trip: {{ board.trip.trip_name or '—' }}{% if board.trip.pickup_date %} · {{ board.trip.pickup_date }}{% endif %}</p>
     <div class="form-actions">
@@ -66,7 +66,7 @@
         <tr>
           <th>Item</th>
           <th>Category</th>
-          <th class="num-col">Needed</th>
+          <th class="num-col">Requested</th>
           <th class="num-col">Pledged</th>
           <th class="num-col">Still open</th>
         </tr>
@@ -76,7 +76,7 @@
           <tr>
             <td>{{ item.name }}</td>
             <td>{{ item.category }}</td>
-            <td class="num-col">{{ item.shortfall }}</td>
+            <td class="num-col">{{ item.requested }}</td>
             <td class="num-col">{{ item.pledged }}</td>
             <td class="num-col"><strong>{{ item.remaining_need }}</strong></td>
           </tr>
@@ -84,9 +84,9 @@
       </tbody>
     </table>
   </div>
-{% elif board.has_fulfillment %}
+{% elif board.capacity_set %}
   <div class="empty-state">
-    <p>No shortages — all demand was covered by the pickup run.</p>
+    <p>No open donor needs — demand is covered or filtered by capacity settings.</p>
   </div>
 {% endif %}
 

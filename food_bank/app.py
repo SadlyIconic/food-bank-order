@@ -34,7 +34,6 @@ PUBLIC_ENDPOINTS = frozenset(
         "cart",
         "confirm",
         "submit_order",
-        "household_status",
         "community_board",
         "community_pledge",
     }
@@ -123,7 +122,6 @@ def confirm():
 
 @app.route("/order", methods=["POST"])
 def submit_order():
-    household_name = request.form.get("household_name", "").strip()
     cart_json = request.form.get("cart_json", "").strip()
 
     if not cart_json:
@@ -175,16 +173,9 @@ def submit_order():
         )
         return redirect(url_for("cart"))
 
-    store.add_order(household_name, lines)
+    store.add_order("", lines)
     flash("Order placed successfully! Thank you.", "success")
     return render_template("order_success.html")
-
-
-@app.route("/status", methods=["GET"])
-def household_status():
-    name = request.args.get("name", "").strip()
-    status = store.lookup_household_status(name) if name else None
-    return render_template("status.html", name=name, status=status)
 
 
 def _board_view(data: dict) -> SimpleNamespace:
@@ -327,92 +318,56 @@ def admin_trip_settings():
 @app.route("/admin/inventory", methods=["GET", "POST"])
 @admin_required
 def admin_inventory():
-    items = store.get_items()
-    inventory = store.get_store_inventory()
-    trip = store.get_trip_settings()
-
-    if request.method == "POST":
-        lines = []
-        for item in items:
-            qty_raw = request.form.get(f"qty_{item['id']}", "0").strip()
-            expires = request.form.get(f"expires_{item['id']}", "").strip()
-            try:
-                qty = max(0, int(qty_raw or 0))
-            except ValueError:
-                qty = 0
-            if qty > 0:
-                lines.append(
-                    {
-                        "item_id": item["id"],
-                        "available_qty": qty,
-                        "weight_lb": item.get("weight_lb", 0),
-                        "expires_at": expires,
-                    }
-                )
-        store.save_store_inventory(
-            {
-                "store_name": request.form.get("store_name", "").strip()
-                or trip.get("store_name", ""),
-                "expires_by": request.form.get("expires_by", "").strip(),
-                "lines": lines,
-            }
-        )
-        flash("Store inventory saved.", "success")
-        return redirect(url_for("admin_inventory"))
-
-    inv_map = {l["item_id"]: l for l in inventory.get("lines", [])}
-    return render_template(
-        "admin_inventory.html",
-        items=items,
-        inventory=inventory,
-        inv_map=inv_map,
-        trip=trip,
-    )
+    flash("Store inventory has been replaced by Staff capacity.", "success")
+    return redirect(url_for("admin_capacity"))
 
 
 @app.route("/admin/plan", methods=["GET", "POST"])
 @admin_required
 def admin_plan():
-    trip = store.get_trip_settings()
-    weight_limit = trip.get("weight_limit_lb", 200)
+    flash("Plan pickup has been replaced by Staff capacity.", "success")
+    return redirect(url_for("admin_capacity"))
+
+
+@app.route("/admin/capacity", methods=["GET", "POST"])
+@admin_required
+def admin_capacity():
+    categories = store.get_categories()
+    thresholds = store.get_staff_thresholds()
+    cat_levels = thresholds.get("categories", {})
+    storage_levels = thresholds.get("storage", {})
 
     if request.method == "POST":
-        action = request.form.get("action", "save")
-        if action == "suggest":
-            store.suggest_fill()
-            flash("Suggested fill applied based on demand and weight limit.", "success")
-        elif action == "fulfill":
-            store.save_fulfillment()
-            flash("Fulfillment recorded from current selection.", "success")
-        else:
-            lines = []
-            for key, val in request.form.items():
-                if key.startswith("pick_"):
-                    item_id = key[5:]
-                    try:
-                        pick_qty = max(0, int(val or 0))
-                    except ValueError:
-                        pick_qty = 0
-                    if pick_qty > 0:
-                        lines.append(
-                            {
-                                "item_id": item_id,
-                                "pick_qty": pick_qty,
-                                "weight_lb": store.item_weight_lb(item_id),
-                            }
-                        )
-            store.save_selection({"lines": lines})
-            flash("Selection saved.", "success")
-        return redirect(url_for("admin_plan"))
+        new_categories = {}
+        for category in categories:
+            level = request.form.get(f"cat_{category}", "ok").strip()
+            if level in store.STAFF_THRESHOLD_LEVELS:
+                new_categories[category] = level
+        new_storage = {}
+        for storage_type in store.STORAGE_TYPES:
+            level = request.form.get(f"storage_{storage_type}", "ok").strip()
+            if level in store.STAFF_THRESHOLD_LEVELS:
+                new_storage[storage_type] = level
+        store.save_staff_thresholds(new_categories, new_storage)
+        flash("Staff capacity saved.", "success")
+        return redirect(url_for("admin_capacity"))
 
-    planner_rows = store.build_planner_rows()
-    selection = store.get_selection()
+    level_options = [
+        ("critically_low", "Critically low"),
+        ("low", "Low"),
+        ("ok", "OK"),
+        ("high", "High"),
+        ("full", "Full"),
+    ]
     return render_template(
-        "admin_plan.html",
-        planner_rows=planner_rows,
-        selection=selection,
-        weight_limit=weight_limit,
-        trip=trip,
+        "admin_capacity.html",
+        categories=categories,
+        storage_types=store.STORAGE_TYPES,
+        storage_labels=store.STORAGE_TYPE_LABELS,
+        cat_levels=cat_levels,
+        storage_levels=storage_levels,
+        level_options=level_options,
+        thresholds=thresholds,
     )
 
 
@@ -445,7 +400,6 @@ def admin_reset():
         flash("No orders to archive. The current round is already empty.", "error")
         return redirect(url_for("admin_dashboard", tab="current"))
 
-    store.save_fulfillment()
     round_entry = store.archive_current_round()
     if round_entry:
         flash(
@@ -459,8 +413,8 @@ def admin_reset():
 @admin_required
 def admin_community_publish():
     published = request.form.get("published", "0") == "1"
-    if published and not store.get_fulfillment().get("items"):
-        flash("Record fulfillment before publishing the community board.", "error")
+    if published and not store.capacity_is_set():
+        flash("Set staff capacity before publishing the community board.", "error")
         return redirect(url_for("admin_community"))
 
     store.set_community_published(published)
@@ -485,11 +439,7 @@ def admin_pledge_action(pledge_id: str):
     if result is None:
         flash("Pledge not found.", "error")
     elif status == "received":
-        flash(
-            "Donation marked received — inventory and fulfillment updated. "
-            "Community needs board reflects the new totals.",
-            "success",
-        )
+        flash("Donation marked received.", "success")
     else:
         flash(f"Pledge marked as {status}.", "success")
     return redirect(url_for("admin_community"))

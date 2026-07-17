@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chess Openings</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cm-chessboard@8/assets/chessboard.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header class="app-header">
+      <h1>Chess Openings</h1>
+      <p class="app-subtitle">Learn mainlines, sidelines, and strategy</p>
+    </header>
+
+    <nav class="main-tabs">
+      <a href="#" class="main-tab" id="tabOpenings" data-tab="openings">Openings</a>
+      <a href="#trial-board" class="main-tab" id="tabTrialBoard" data-tab="trial-board">Trial Board</a>
+      <a href="#quiz" class="main-tab" id="tabQuiz" data-tab="quiz">Quiz Mode</a>
+    </nav>
+
+    <div id="menuView" class="view">
+      <section class="menu-section">
+        <h2 class="section-title section-white">Play as White</h2>
+        <div id="whiteOpenings" class="opening-cards"></div>
+      </section>
+      <section class="menu-section">
+        <h2 class="section-title section-black">Play as Black</h2>
+        <div id="blackOpenings" class="opening-cards"></div>
+      </section>
+    </div>
+
+    <div id="detailView" class="view hidden"></div>
+    <div id="trialView" class="view hidden"></div>
+    <div id="quizView" class="view hidden"></div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

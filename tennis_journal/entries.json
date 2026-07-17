@@ -1,0 +1,202 @@
+[
+  {
+    "id": "a1b2c3d4-e5f6-4789-a012-345678901001",
+    "opponent": "Marcus Lee",
+    "date": "2025-06-20",
+    "score": "4-6, 6-7 (5-7)",
+    "notes": "Marcus attacks second serves relentlessly — stepped in and crushed three return winners off my kick serve in the first set alone. Four double faults, all at 30-30 or deuce. When I tried to flatten the second serve for pace, it went long. Need a reliable kick wide to the ad court, not speed.\n\nForehand held up in rallies but I rushed it on short balls after his returns, netting two easy putaways at 4-4 in the second. Same pattern: pressure on serve → shaky second → defensive rally → overhit forehand on the first comfortable ball.",
+    "result": "loss",
+    "match_type": "singles",
+    "created_at": "2025-06-20T20:30:00+00:00"
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4789-a012-345678901002",
+    "opponent": "Priya Nair",
+    "date": "2025-06-14",
+    "score": "6-3, 6-4",
+    "notes": "Best I've managed a lead all month. At 4-2 in the second I consciously played crosscourt instead of going for the line — worked. Still pushed three forehands long on sitters at 4-3; she wasn't punishing them but a better player would have.\n\nSecond serve was solid (only 1 DF). Return position: stood a half-step inside baseline on her second serves and won five of seven — should be default, not exception.",
+    "result": "win",
+    "match_type": "singles",
+    "created_at": "2025-06-14T19:15:00+00:00"
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4789-a012-345678901003",
+    "opponent": "Tom Berger",
+    "date": "2025-06-08",
+    "score": "3-6, 7-6 (7-4), 4-6",
+    "notes": "Third-set collapse again. Won the tiebreak with good serving but legs were gone ten minutes into the decider. Forehand started sailing — contact point drifted back and I was swinging from behind my hip.\n\nThis is the third long match this season where I've lost after winning the second set. Fitness is part of it, but mentally I also start going for winners instead of rebuilding points when tired. Note for coach: third-set pattern is passive first two games, then panic aggression.",
+    "result": "loss",
+    "match_type": "singles",
+    "created_at": "2025-06-08T21:00:00+00:00"
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4789-a012-345678901004",
+    "opponent": "Elena Rossi",
+    "date": "2025-05-31",
+    "score": "2-6, 5-7",
+    "notes": "Heavy topspin forehand — every ball jumped above my shoulder. I kept retreating behind the baseline and was hitting defensively on the back foot. Lost timing completely; forehand errors accounted for 70% of unforced mistakes.\n\nTried standing deeper to give myself time — made it worse. Need to practice taking ball on the rise against the topspin machine. This is the same story as Viktor Hale in February.",
+    "result": "loss",
+    "match_type": "singles",
+    "created_at": "2025-05-31T18:45:00+00:00"
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4789-a012-345678901005",
+    "opponent": "Jake Morrison",
+    "date": "2025-05-24",
+    "score": "7-5, 6-4",
+    "notes": "Breakthrough at 5-5 first set: three deep crosscourt forehands, waited for short ball, approached to backhand volley. Patience paid off.\n\nOnly one double fault — focused on spin and placement on second serve, not mph. When I trust the kick, my whole game loosens up. Jake said my returns were 'suddenly aggressive' — because I wasn't standing four feet behind the baseline for once.",
+    "result": "win",
+    "match_type": "singles",
+    "created_at": "2025-05-24T17:30:00+00:00"
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4789-a012-345678901006",
+    "opponent": "David Kim",
+    "date": "2025-05-18",
+    "score": "6-7 (3-7), 6-4, 3-6",
+    "notes": "Club ladder match. Second set I moved return position up and broke twice. Third set I reverted — started camping deep again, let him dictate with first-strike forehands. Lost 3-6 without feeling like he raised his level; I just gave him time.\n\nAlso: two DFs at 2-3 in the third. Second-serve yips under scoreboard pressure remain the biggest leak in my game.",
+    "result": "loss",
+    "match_type": "singles",
+    "created_at": "2025-05-18T20:00:00+00:00"
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4789-a012-345678901007",
+    "opponent": "Sofia Martinez",
+    "date": "2025-05-10",
+    "score": "6-2, 6-1",
+    "notes": "Easy win — she struggled with low slice backhand and couldn't handle body serves. Not much to learn tactically except that my slice is actually a weapon when I use it.\n\nHonest note: when matches are comfortable I stop thinking about patterns and bad habits hide. The real tests are Elena, Marcus, Tom types. Don't read too much into blowout wins.",
+    "result": "win",
+    "match_type": "singles",
+    "created_at": "2025-05-10T16:00:00+00:00"
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4789-a012-345678901008",
+    "opponent": "Ryan O'Connor",
+    "date": "2025-04-28",
+    "score": "4-6, 4-6",
+    "notes": "Two break points against me in the first set — both times I went for hero forehand down the line on a neutral ball, missed wide. When defending break points I panic into low-percentage offense instead of grinding crosscourt.\n\nRyan doesn't beat me; I beat myself on big points. Same over-aggression when ahead showed up at 4-4 second set — had him at 15-40 and went for inside-out winner on a ball at shoulder height. Out.",
+    "result": "loss",
+    "match_type": "singles",
+    "created_at": "2025-04-28T19:30:00+00:00"
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4789-a012-345678901009",
+    "opponent": "Amanda Chen",
+    "date": "2025-04-20",
+    "score": "6-4, 3-6, 6-3",
+    "notes": "Dropped second set when forehand timing went off — she added pace and I backed up again. Third set reset: higher on return, heavy topspin to her backhand, only approached on balls landing inside the service line.\n\nTwo successful net approaches in the third — both off genuinely short balls. Contrast with Dan Reeves match where I forced approaches. Selection matters more than volley technique.",
+    "result": "win",
+    "match_type": "singles",
+    "created_at": "2025-04-20T18:00:00+00:00"
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4789-a012-345678901010",
+    "opponent": "Miguel Santos",
+    "date": "2025-04-12",
+    "score": "6-4, 6-7 (6-8), 2-6",
+    "notes": "Up a break in the second-set tiebreak at 4-2 and went for two consecutive winners — both missed. Lost tiebreak, then third set was a blur of forehand errors.\n\nRecurring theme: when I have momentum I swing harder instead of staying disciplined. Miguel didn't change tactics; I donated the match with over-hitting on easy balls. Write on wristband: 'margin, not power.'",
+    "result": "loss",
+    "match_type": "singles",
+    "created_at": "2025-04-12T20:45:00+00:00"
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4789-a012-345678901011",
+    "opponent": "James Wu",
+    "date": "2025-04-05",
+    "score": "6-3, 6-3",
+    "notes": "Blueprint match. Crosscourt forehand to his backhand until he gave me a short ball — then change direction. No unnecessary down-the-line attempts. First serve percentage 68%.\n\nSecond serves: kick wide, never flat. Returns from inside baseline on second serves. If I could clone this game plan every week, win rate would jump. Problem is I abandon it when score gets tight.",
+    "result": "win",
+    "match_type": "singles",
+    "created_at": "2025-04-05T17:15:00+00:00"
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4789-a012-345678901012",
+    "opponent": "Heather Brooks",
+    "date": "2025-03-29",
+    "score": "5-7, 6-4, 5-7",
+    "notes": "Doubles with Alex vs Heather & Paul. Exposed at net — my lobs under pressure land mid-court and get poached. Same in singles context: when rushed I don't get enough height on defensive shots.\n\nAlso noticed I serve-and-volleyed twice on second serve points (bad idea). Approach discipline applies to doubles too — only come in behind a genuine short ball, not because I'm bored.",
+    "result": "loss",
+    "match_type": "doubles",
+    "created_at": "2025-03-29T19:00:00+00:00"
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4789-a012-345678901013",
+    "opponent": "Greg Palmer",
+    "date": "2025-03-22",
+    "score": "7-6 (7-5), 6-4",
+    "notes": "Tiebreak saved by two kick serves wide — he couldn't attack them. Proof that placement beats pace on second serve when I commit to it.\n\nForehand was clean most of the day because I wasn't rushing — stayed on front foot. Greg pushes deep and slow; patience was key. Matches like this show the strokes are fine when footwork and positioning are right.",
+    "result": "win",
+    "match_type": "singles",
+    "created_at": "2025-03-22T18:30:00+00:00"
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4789-a012-345678901014",
+    "opponent": "Nina Kowalski",
+    "date": "2025-03-15",
+    "score": "3-6, 4-6",
+    "notes": "Return position disaster. Stood behind baseline even on her weak second serve — she hit 78% first serves because I gave her huge margins. Zero break points converted.\n\nThis is the passive-return pattern that shows up every few weeks. Homework: shadow returns from two feet inside baseline. If I'm not uncomfortable with how close I am, I'm too far back.",
+    "result": "loss",
+    "match_type": "singles",
+    "created_at": "2025-03-15T17:00:00+00:00"
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4789-a012-345678901015",
+    "opponent": "Chris Doyle",
+    "date": "2025-03-08",
+    "score": "6-2, 7-5",
+    "notes": "Up 5-2 second set and started hunting winners — nearly let him back in. At 5-5 I tightened up and double-faulted twice. Closed it out only after reminding myself to play James Wu patterns.\n\nWinning doesn't mean the issues are fixed. Discipline when ahead and second serve under pressure are still the two things that cost me free games.",
+    "result": "win",
+    "match_type": "singles",
+    "created_at": "2025-03-08T19:45:00+00:00"
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4789-a012-345678901016",
+    "opponent": "Viktor Hale",
+    "date": "2025-02-28",
+    "score": "4-6, 2-6",
+    "notes": "Lefty with heavy topspin — forehand to my backhand side jumped high. Same failure mode as Elena Rossi will be in May: I camped deep, contact point late, forehand broke down trying to generate pace from a defensive position.\n\nThree losses now vs heavy topspin opponents in 2025. Need dedicated drill: take ball early, high finish, aim deep middle not lines. Can't keep giving away free real estate behind baseline.",
+    "result": "loss",
+    "match_type": "singles",
+    "created_at": "2025-02-28T20:15:00+00:00"
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4789-a012-345678901017",
+    "opponent": "Sarah Lin",
+    "date": "2025-02-22",
+    "score": "6-4, 6-7 (5-7), 6-2",
+    "notes": "League match — first time this year I actually raised my level in a third set instead of fading. Crosscourt patterns, no hero shots. Third set 6-2 felt easy because I didn't change approach when tired.\n\nContrast with Tom Berger loss coming in June. Difference today: ate banana at changeover, focused on footwork not power. Maybe third-set problem is partly fuel and partly mental script.",
+    "result": "win",
+    "match_type": "singles",
+    "created_at": "2025-02-22T18:00:00+00:00"
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4789-a012-345678901018",
+    "opponent": "Dan Reeves",
+    "date": "2025-02-14",
+    "score": "6-7 (4-7), 4-6",
+    "notes": "Net approach nightmare. Came in behind weak mid-court balls four times — passed cleanly every time. Volleys aren't the problem; selection is. I'm approaching because I want to finish points, not because the ball demands it.\n\nRule: only approach if ball lands inside service line AND I'm balanced. Otherwise reset crosscourt. Also chipped second serve and he attacked it — second serve must kick, not float.",
+    "result": "loss",
+    "match_type": "singles",
+    "created_at": "2025-02-14T19:30:00+00:00"
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4789-a012-345678901019",
+    "opponent": "Omar Farid",
+    "date": "2025-02-08",
+    "score": "6-3, 6-4",
+    "notes": "Slice serve out wide on ad side was money — he couldn't return crosscourt. Carried that confidence to second serve kick. When serve clicks, forehand errors drop because I'm not playing catch-up in rallies.\n\nGood reminder that serve is the root of a lot of forehand problems — when I'm defending off second serves, forehand gets rushed. Fix the serve, fix the cascade.",
+    "result": "win",
+    "match_type": "singles",
+    "created_at": "2025-02-08T17:45:00+00:00"
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4789-a012-345678901020",
+    "opponent": "Lisa Tran",
+    "date": "2025-01-25",
+    "score": "6-3, 5-7, 4-6",
+    "notes": "First competitive match of 2025 — rust everywhere. Three double faults in the deciding set, all on break points or 30-30. Return game passive from point one; let her hold easily first four service games.\n\nBaseline for the year: (1) second serve under pressure, (2) return position too deep, (3) over-hit when ahead, (4) forehand breaks down vs heavy topspin, (5) third-set fade. Every entry this season should track progress on these five.",
+    "result": "loss",
+    "match_type": "singles",
+    "created_at": "2025-01-25T20:00:00+00:00"
+  }
+]

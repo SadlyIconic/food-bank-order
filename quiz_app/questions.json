@@ -1,0 +1,95 @@
+{
+  "easy": [
+    {
+      "question": "What is the capital of France?",
+      "options": ["London", "Berlin", "Paris", "Madrid"],
+      "answer": 2
+    },
+    {
+      "question": "Which planet is known as the Red Planet?",
+      "options": ["Venus", "Mars", "Jupiter", "Saturn"],
+      "answer": 1
+    },
+    {
+      "question": "How many continents are there on Earth?",
+      "options": ["5", "6", "7", "8"],
+      "answer": 2
+    }
+  ],
+  "medium": [
+    {
+      "question": "What does HTML stand for?",
+      "options": [
+        "Hyper Text Markup Language",
+        "High Tech Modern Language",
+        "Home Tool Markup Language",
+        "Hyper Transfer Mark Language"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Which element has the chemical symbol 'O'?",
+      "options": ["Gold", "Oxygen", "Osmium", "Oganesson"],
+      "answer": 1
+    },
+    {
+      "question": "How many bits are in one byte?",
+      "options": ["4", "8", "16", "32"],
+      "answer": 1
+    }
+  ],
+  "hard": [
+    {
+      "question": "What is the time complexity of binary search on a sorted array?",
+      "options": ["O(1)", "O(log n)", "O(n)", "O(n log n)"],
+      "answer": 1
+    },
+    {
+      "question": "Which HTTP status code means 'Not Found'?",
+      "options": ["200", "301", "404", "500"],
+      "answer": 2
+    },
+    {
+      "question": "In Python, which built-in function converts a string to an integer?",
+      "options": ["str()", "float()", "int()", "bool()"],
+      "answer": 2
+    }
+  ],
+  "spanish": [
+    {
+      "question": "How is the regular Spanish future tense formed?",
+      "options": [
+        "Drop -ar/-er/-ir, then add future endings to the stem",
+        "Add future endings directly to the full infinitive",
+        "Use the preterite stem plus future endings",
+        "Replace the infinitive ending with -é"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "What is the yo (first person singular) ending in the future tense?",
+      "options": ["-ía", "-é", "-o", "-aré"],
+      "answer": 1
+    },
+    {
+      "question": "What is the nosotros ending in the conditional tense?",
+      "options": ["-emos", "-íamos", "-éis", "-ían"],
+      "answer": 1
+    },
+    {
+      "question": "Which is the correct irregular future/conditional stem of 'tener'?",
+      "options": ["ten-", "tendr-", "tenu-", "tend-"],
+      "answer": 1
+    },
+    {
+      "question": "What do irregular verbs in the future and conditional tenses typically share?",
+      "options": [
+        "The same irregular stem in both tenses",
+        "The same endings as the preterite tense",
+        "A stem change only in the conditional",
+        "An infinitive used as the full conjugated form"
+      ],
+      "answer": 0
+    }
+  ]
+}

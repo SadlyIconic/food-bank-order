@@ -3,7 +3,6 @@
  */
 const FoodBankCart = (() => {
   const STORAGE_KEY = "food_bank_cart";
-  const HOUSEHOLD_KEY = "food_bank_household";
 
   function i18n(key, vars = {}) {
     if (typeof FoodBankI18n !== "undefined") return FoodBankI18n.t(key, vars);
@@ -355,7 +354,6 @@ const FoodBankCart = (() => {
     const content = document.getElementById("cart-content");
     const empty = document.getElementById("cart-empty");
     const tbody = document.getElementById("cart-lines");
-    const householdInput = document.getElementById("household_name");
     const reviewBtn = document.getElementById("review-order-btn");
 
     function updateCartSubtitle() {
@@ -366,11 +364,6 @@ const FoodBankCart = (() => {
       const limit = getOrderWeightLimit();
       const wLabel = weightLabel();
       el.textContent = i18n("cart_subtitle", { weight: `${weight} / ${limit} ${wLabel}` });
-    }
-
-    const savedHousehold = sessionStorage.getItem(HOUSEHOLD_KEY);
-    if (householdInput && savedHousehold) {
-      householdInput.value = savedHousehold;
     }
 
     function refresh() {
@@ -433,10 +426,7 @@ const FoodBankCart = (() => {
         showWeightMessage(i18n("weight_over_cart", { weight: weight.toFixed(1), limit }), true);
         return;
       }
-      const name = householdInput?.value.trim() || "";
-      sessionStorage.setItem(HOUSEHOLD_KEY, name);
-      const params = name ? `?household_name=${encodeURIComponent(name)}` : "";
-      window.location.href = `/confirm${params}`;
+      window.location.href = "/confirm";
     });
 
     document.addEventListener("foodbank:langchange", () => {
@@ -455,16 +445,8 @@ const FoodBankCart = (() => {
     const content = document.getElementById("confirm-content");
     const empty = document.getElementById("confirm-empty");
     const tbody = document.getElementById("confirm-lines");
-    const householdEl = document.getElementById("confirm-household");
-    const householdHidden = document.getElementById("household_name_hidden");
     const cartJsonHidden = document.getElementById("cart_json_hidden");
     const placeBtn = document.getElementById("place-order-btn");
-
-    const params = new URLSearchParams(window.location.search);
-    const household =
-      params.get("household_name")?.trim() ||
-      sessionStorage.getItem(HOUSEHOLD_KEY)?.trim() ||
-      "";
 
     if (!cart.length) {
       if (content) content.hidden = true;
@@ -479,12 +461,6 @@ const FoodBankCart = (() => {
     if (content) content.hidden = false;
     if (empty) empty.hidden = true;
 
-    if (householdEl && household) {
-      householdEl.textContent = `${i18n("ordering_for")} ${household}`;
-      householdEl.hidden = false;
-    }
-
-    if (householdHidden) householdHidden.value = household;
     if (cartJsonHidden) cartJsonHidden.value = JSON.stringify(cart);
 
     if (placeBtn) {
@@ -521,9 +497,6 @@ const FoodBankCart = (() => {
 
     document.addEventListener("foodbank:langchange", () => {
       if (typeof FoodBankI18n !== "undefined") FoodBankI18n.applyToElements();
-      if (householdEl && household) {
-        householdEl.textContent = `${i18n("ordering_for")} ${household}`;
-      }
       renderConfirmLines();
     });
   }

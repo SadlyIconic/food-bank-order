@@ -26,8 +26,6 @@
 
   <div class="card">
 
-    <p id="confirm-household" class="confirm-household" hidden></p>
-
     <table class="data-table">
 
       <thead>
@@ -51,8 +49,6 @@
 
 
   <form class="form-actions confirm-actions" action="{{ url_for('submit_order') }}" method="post" id="place-order-form">
-
-    <input type="hidden" name="household_name" id="household_name_hidden" value="">
 
     <input type="hidden" name="cart_json" id="cart_json_hidden" value="">
 

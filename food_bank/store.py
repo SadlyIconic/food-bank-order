@@ -31,6 +31,26 @@ MAX_PLEDGE_QTY = 50
 MAX_PLEDGE_QTY_PER_ITEM = 20
 ANONYMOUS_DONOR_NAME = "Anonymous donor"
 
+STAFF_THRESHOLD_LEVELS = ("critically_low", "low", "ok", "high", "full")
+STORAGE_TYPES = ("shelf", "refrigerated", "frozen")
+STORAGE_TYPE_LABELS = {
+    "shelf": "Dry",
+    "refrigerated": "Refrigerated",
+    "frozen": "Frozen",
+}
+CATEGORY_PRIORITY = {
+    "critically_low": 4,
+    "low": 3,
+    "ok": 2,
+    "high": 1,
+    "full": 0,
+}
+DEFAULT_STAFF_THRESHOLDS = {
+    "updated_at": "",
+    "categories": {},
+    "storage": {},
+}
+
 ITEMS: list[dict] = []
 _items_mtime: float | None = None
 
@@ -186,6 +206,49 @@ def get_categories() -> list[str]:
     return seen
 
 
+def get_item_storage_type(item: dict) -> str:
+    storage = item.get("storage_type", "")
+    if storage in STORAGE_TYPES:
+        return storage
+    cat = item.get("category", "")
+    if cat == "Dairy":
+        return "refrigerated"
+    if cat == "Frozen":
+        return "frozen"
+    return "shelf"
+
+
+def get_staff_thresholds() -> dict:
+    with get_conn() as conn:
+        thresholds = _kv_get(conn, "staff_thresholds", DEFAULT_STAFF_THRESHOLDS.copy())
+    thresholds.setdefault("updated_at", "")
+    thresholds.setdefault("categories", {})
+    thresholds.setdefault("storage", {})
+    return thresholds
+
+
+def save_staff_thresholds(categories: dict, storage: dict) -> dict:
+    thresholds = {
+        "updated_at": _utc_now(),
+        "categories": {
+            k: v for k, v in categories.items() if v in STAFF_THRESHOLD_LEVELS
+        },
+        "storage": {
+            k: v
+            for k, v in storage.items()
+            if k in STORAGE_TYPES and v in STAFF_THRESHOLD_LEVELS
+        },
+    }
+    with get_conn() as conn:
+        _kv_set(conn, "staff_thresholds", thresholds)
+        conn.commit()
+    return thresholds
+
+
+def capacity_is_set() -> bool:
+    return bool(get_staff_thresholds().get("updated_at"))
+
+
 def item_weight_lb(item_id: str) -> float:
     catalog = get_item_map().get(item_id, {})
     return float(catalog.get("weight_lb", 0) or 0)
@@ -249,16 +312,17 @@ def get_orders() -> list[dict]:
 
 
 def add_order(household_name: str, lines: list[dict]) -> dict:
+    del household_name  # PII not stored; column kept for migration compatibility
     order = {
         "id": str(uuid.uuid4()),
         "created_at": _utc_now(),
-        "household_name": household_name,
+        "household_name": "",
         "lines": lines,
     }
     with get_conn() as conn:
         conn.execute(
             "INSERT INTO orders (id, created_at, household_name, lines_json) VALUES (?, ?, ?, ?)",
-            (order["id"], order["created_at"], household_name, json.dumps(lines)),
+            (order["id"], order["created_at"], "", json.dumps(lines)),
         )
         conn.commit()
     return order
@@ -692,6 +756,56 @@ def _pledged_qty_by_item(round_id: str | None = None, status: str = "pledged") -
     return {row["item_id"]: int(row["total"]) for row in rows}
 
 
+def get_donor_needs() -> list[dict]:
+    """Compute donor board items from demand, staff thresholds, and pledges."""
+    totals = aggregate_totals()
+    thresholds = get_staff_thresholds()
+    cat_levels = thresholds.get("categories", {})
+    storage_levels = thresholds.get("storage", {})
+    item_map = get_item_map()
+    pledged_by_item = _pledged_qty_by_item()
+
+    items: list[dict] = []
+    for row in totals:
+        demand_qty = int(row.get("quantity", 0) or 0)
+        if demand_qty <= 0:
+            continue
+        item_id = row["item_id"]
+        catalog = item_map.get(item_id, {})
+        category = catalog.get("category", row.get("category", ""))
+        storage_type = get_item_storage_type(catalog)
+
+        cat_level = cat_levels.get(category, "ok")
+        storage_level = storage_levels.get(storage_type, "ok")
+
+        if cat_level in ("high", "full"):
+            continue
+        if storage_level == "full":
+            continue
+
+        pledged = pledged_by_item.get(item_id, 0)
+        remaining = max(0, demand_qty - pledged)
+        priority_score = CATEGORY_PRIORITY.get(cat_level, 2)
+
+        items.append(
+            {
+                "item_id": item_id,
+                "name": row.get("name", catalog.get("name", item_id)),
+                "category": category,
+                "storage_type": storage_type,
+                "unit": row.get("unit", catalog.get("unit", "")),
+                "image": f"images/items/{item_id}.svg",
+                "requested": demand_qty,
+                "pledged": pledged,
+                "remaining_need": remaining,
+                "priority_score": priority_score,
+            }
+        )
+
+    items.sort(key=lambda r: (r["priority_score"], r["remaining_need"]), reverse=True)
+    return items
+
+
 def get_community_needs(
     *,
     include_unpublished: bool = False,
@@ -701,8 +815,8 @@ def get_community_needs(
     show_unpublished = include_unpublished or admin_preview
     trip = get_trip_settings()
     published = bool(trip.get("community_published"))
-    fulfillment = get_fulfillment()
-    has_fulfillment = bool(fulfillment.get("items")) or bool(fulfillment.get("computed_at"))
+    thresholds = get_staff_thresholds()
+    capacity_set = capacity_is_set()
 
     trip_context = {
         "trip_name": trip.get("trip_name", ""),
@@ -710,18 +824,18 @@ def get_community_needs(
         "store_name": trip.get("store_name", ""),
     }
 
-    if not has_fulfillment:
+    if not capacity_set:
         return {
             "published": published,
             "ready": False,
-            "has_fulfillment": False,
+            "capacity_set": False,
             "all_covered": False,
             "items": [],
             "pledges": [],
             "categories": [],
             "donors": [],
             "trip": trip_context,
-            "computed_at": "",
+            "capacity_updated_at": "",
             "state": "not_recorded",
             "round_id": current_round_id(),
         }
@@ -730,52 +844,24 @@ def get_community_needs(
         return {
             "published": False,
             "ready": True,
-            "has_fulfillment": True,
+            "capacity_set": True,
             "all_covered": False,
             "items": [],
             "pledges": [],
             "categories": [],
             "donors": [],
             "trip": trip_context,
-            "computed_at": fulfillment.get("computed_at", ""),
+            "capacity_updated_at": thresholds.get("updated_at", ""),
             "state": "unpublished",
             "round_id": current_round_id(),
         }
 
-    item_map = get_item_map()
-    pledged_by_item = _pledged_qty_by_item()
-    items: list[dict] = []
+    donor_items = get_donor_needs()
     categories: set[str] = set()
+    for item in donor_items:
+        if item.get("category"):
+            categories.add(item["category"])
 
-    for row in fulfillment.get("items", []):
-        shortfall = int(row.get("shortfall", 0) or 0)
-        if shortfall <= 0:
-            continue
-        item_id = row["item_id"]
-        catalog = item_map.get(item_id, {})
-        pledged = pledged_by_item.get(item_id, 0)
-        remaining = max(0, shortfall - pledged)
-        requested = int(row.get("requested", 0) or 0)
-        picked = int(row.get("picked", 0) or 0)
-        category = catalog.get("category", "")
-        if category:
-            categories.add(category)
-        items.append(
-            {
-                "item_id": item_id,
-                "name": row.get("name", catalog.get("name", item_id)),
-                "category": category,
-                "unit": row.get("unit", catalog.get("unit", "")),
-                "image": f"images/items/{item_id}.svg",
-                "requested": requested,
-                "picked": picked,
-                "shortfall": shortfall,
-                "pledged": pledged,
-                "remaining_need": remaining,
-            }
-        )
-
-    items.sort(key=lambda r: (r["remaining_need"], r["shortfall"]), reverse=True)
     pledges = get_pledges_for_round(statuses=["pledged", "received"])
     donor_names = sorted(
         {
@@ -785,9 +871,9 @@ def get_community_needs(
         }
     )
 
-    if not items:
+    if not donor_items:
         state = "all_covered"
-    elif all(i["remaining_need"] <= 0 for i in items):
+    elif all(i["remaining_need"] <= 0 for i in donor_items):
         state = "pledged_out"
     else:
         state = "open"
@@ -795,14 +881,14 @@ def get_community_needs(
     return {
         "published": published,
         "ready": True,
-        "has_fulfillment": True,
-        "all_covered": len(items) == 0,
-        "items": items,
+        "capacity_set": True,
+        "all_covered": len(donor_items) == 0,
+        "items": donor_items,
         "pledges": pledges,
         "categories": sorted(categories),
         "donors": donor_names,
         "trip": trip_context,
-        "computed_at": fulfillment.get("computed_at", ""),
+        "capacity_updated_at": thresholds.get("updated_at", ""),
         "state": state,
         "round_id": current_round_id(),
     }
@@ -900,7 +986,7 @@ def add_donor_pledge(
 
     needs = get_community_needs(include_unpublished=True)
     if not needs.get("ready"):
-        raise ValueError("Fulfillment has not been recorded yet.")
+        raise ValueError("Staff capacity has not been set yet.")
 
     need_row = next((i for i in needs["items"] if i["item_id"] == item_id), None)
     if need_row is None:
@@ -960,10 +1046,6 @@ def update_pledge_status(pledge_id: str, status: str) -> dict | None:
         if row is None:
             return None
 
-        old_status = row["status"]
-        if status == "received" and old_status == "pledged":
-            _apply_donor_receipt(row["item_id"], row["quantity"])
-
         conn.execute(
             "UPDATE donor_pledges SET status = ? WHERE id = ?",
             (status, pledge_id),
@@ -980,19 +1062,17 @@ def set_community_published(published: bool) -> dict:
 
 
 def archive_current_round() -> dict | None:
-    """Archive current round with fulfillment data and clear working state."""
+    """Archive current round with capacity data and clear working state."""
     orders = get_orders()
     if not orders:
         return None
 
-    fulfillment = save_fulfillment()
     round_id = current_round_id()
     pledges_snapshot = get_all_pledges_for_round(round_id)
     totals = aggregate_totals(orders)
     demand_wt = demand_weight_lb(orders)
     trip = get_trip_settings()
-    inventory = get_store_inventory()
-    selection = get_selection()
+    staff_thresholds = get_staff_thresholds()
 
     round_entry = {
         "id": str(uuid.uuid4()),
@@ -1001,9 +1081,7 @@ def archive_current_round() -> dict | None:
         "totals": totals,
         "demand_weight_lb": demand_wt,
         "trip": trip,
-        "store_inventory": inventory,
-        "selection": selection,
-        "fulfillment": fulfillment,
+        "staff_thresholds": staff_thresholds,
         "donor_pledges": pledges_snapshot,
     }
 
@@ -1020,9 +1098,9 @@ def archive_current_round() -> dict | None:
                 json.dumps(totals),
                 demand_wt,
                 json.dumps(trip),
-                json.dumps(inventory),
-                json.dumps(selection),
-                json.dumps(fulfillment),
+                json.dumps({}),
+                json.dumps(staff_thresholds),
+                json.dumps({}),
             ),
         )
         conn.execute("DELETE FROM orders")
@@ -1030,9 +1108,7 @@ def archive_current_round() -> dict | None:
             "UPDATE donor_pledges SET status = 'received' WHERE round_id = ? AND status = 'pledged'",
             (round_id,),
         )
-        _kv_set(conn, "store_inventory", {"lines": [], "updated_at": "", "store_name": "", "expires_by": ""})
-        _kv_set(conn, "selection", {"lines": [], "total_weight_lb": 0})
-        _kv_set(conn, "fulfillment", {"items": [], "households": []})
+        _kv_set(conn, "staff_thresholds", DEFAULT_STAFF_THRESHOLDS.copy())
         trip = _kv_get(conn, "trip", DEFAULT_TRIP)
         trip["community_published"] = False
         _kv_set(conn, "trip", trip)
@@ -1059,8 +1135,14 @@ def get_archive() -> list[dict]:
         }
         if row["trip_json"]:
             entry["trip"] = json.loads(row["trip_json"])
+        if row["selection_json"]:
+            selection_data = json.loads(row["selection_json"])
+            if selection_data.get("categories") is not None:
+                entry["staff_thresholds"] = selection_data
         if row["fulfillment_json"]:
-            entry["fulfillment"] = json.loads(row["fulfillment_json"])
+            fulfillment_data = json.loads(row["fulfillment_json"])
+            if fulfillment_data.get("items") is not None or fulfillment_data.get("households") is not None:
+                entry["fulfillment"] = fulfillment_data
         result.append(entry)
     return result
 
@@ -1085,9 +1167,17 @@ def get_archive_round(round_id: str) -> dict | None:
     if row["trip_json"]:
         entry["trip"] = json.loads(row["trip_json"])
     if row["store_inventory_json"]:
-        entry["store_inventory"] = json.loads(row["store_inventory_json"])
+        store_inv = json.loads(row["store_inventory_json"])
+        if store_inv:
+            entry["store_inventory"] = store_inv
     if row["selection_json"]:
-        entry["selection"] = json.loads(row["selection_json"])
+        selection_data = json.loads(row["selection_json"])
+        if selection_data.get("categories") is not None:
+            entry["staff_thresholds"] = selection_data
+        elif selection_data:
+            entry["selection"] = selection_data
     if row["fulfillment_json"]:
-        entry["fulfillment"] = json.loads(row["fulfillment_json"])
+        fulfillment_data = json.loads(row["fulfillment_json"])
+        if fulfillment_data.get("items") is not None or fulfillment_data.get("households") is not None:
+            entry["fulfillment"] = fulfillment_data
     return entry

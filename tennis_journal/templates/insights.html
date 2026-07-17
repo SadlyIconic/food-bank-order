@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Insights — Tennis Journal{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <h1>Insights</h1>
+  <p class="page-subtitle">Recurring themes from your match notes</p>
+</section>
+
+{% if not report.has_enough %}
+  <div class="empty-state">
+    <p>Add at least {{ report.min_entries }} entries with notes to generate insights.</p>
+    <p class="meta">You have {{ report.entries_with_notes }} noted {{ 'entry' if report.entries_with_notes == 1 else 'entries' }} so far.</p>
+    <a href="{{ url_for('create_entry') }}" class="btn btn-primary">New entry</a>
+  </div>
+{% else %}
+  <section class="insights-stats card">
+    <h2>Overview</h2>
+    <dl class="stats-grid">
+      <div>
+        <dt>Matches logged</dt>
+        <dd>{{ report.total_entries }}</dd>
+      </div>
+      <div>
+        <dt>Record</dt>
+        <dd>
+          <span class="result result-win">{{ report.record.wins }}W</span>
+          <span class="result result-loss">{{ report.record.losses }}L</span>
+        </dd>
+      </div>
+      <div>
+        <dt>Themes detected</dt>
+        <dd>{{ report.issues|length + report.strengths|length }}</dd>
+      </div>
+    </dl>
+  </section>
+
+  {% if report.focus_areas %}
+    <section class="insights-section">
+      <h2>Top focus areas</h2>
+      <p class="section-desc">Issues that appear most often in losses</p>
+      <div class="theme-list">
+        {% for theme in report.focus_areas %}
+          <article class="theme-card theme-issue theme-focus">
+            <div class="theme-header">
+              <h3>{{ theme.label }}</h3>
+              <span class="theme-badge">{{ theme.count }} {{ 'match' if theme.count == 1 else 'matches' }}</span>
+            </div>
+            <p class="theme-record">
+              <span class="result result-loss">{{ theme.losses }}L</span>
+              <span class="result result-win">{{ theme.wins }}W</span>
+              in tagged matches
+            </p>
+            {% if theme.tip %}
+              <p class="theme-tip">{{ theme.tip }}</p>
+            {% endif %}
+            <ul class="theme-matches">
+              {% for match in theme.matches[:5] %}
+                <li>
+                  <a href="{{ url_for('view_entry', entry_id=match.id) }}">{{ match.opponent }}</a>
+                  <span class="meta">· {{ match.date }}{% if match.result %} · {{ match.result|capitalize }}{% endif %}</span>
+                </li>
+              {% endfor %}
+              {% if theme.matches|length > 5 %}
+                <li class="meta">+ {{ theme.matches|length - 5 }} more</li>
+              {% endif %}
+            </ul>
+          </article>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+
+  {% if report.strengths %}
+    <section class="insights-section">
+      <h2>What's working</h2>
+      <div class="theme-list">
+        {% for theme in report.strengths %}
+          <article class="theme-card theme-strength">
+            <div class="theme-header">
+              <h3>{{ theme.label }}</h3>
+              <span class="theme-badge theme-badge-good">{{ theme.count }} {{ 'match' if theme.count == 1 else 'matches' }}</span>
+            </div>
+            <p class="theme-record">
+              <span class="result result-win">{{ theme.wins }}W</span>
+              <span class="result result-loss">{{ theme.losses }}L</span>
+            </p>
+            {% if theme.tip %}
+              <p class="theme-tip">{{ theme.tip }}</p>
+            {% endif %}
+          </article>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+
+  {% if not report.issues and not report.strengths %}
+    <div class="empty-state">
+      <p>No themes matched yet. Try using specific terms in your notes (e.g. “second serve”, “forehand”, “return position”).</p>
+    </div>
+  {% endif %}
+{% endif %}
+{% endblock %}

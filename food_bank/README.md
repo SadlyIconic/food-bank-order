@@ -1,20 +1,18 @@
 # Food Bank Order App
 
-A Flask app for coordinating food bank shopping under a weight limit. Households request items (capped per order), admins see total demand vs trip capacity, enter store surplus, plan what to pick up, and share fulfillment status. A public **Community Give** area lets donors see remaining shortages and pledge items after fulfillment is recorded.
+A Flask app for coordinating food bank shopping under a weight limit. Households request items (capped per order), admins see aggregated demand, set daily staff capacity by category and storage type, and publish a proxy-based donor board. A public **Community Give** area lets donors see remaining needs and pledge items — no per-item inventory or fulfillment tracking required.
 
 ## Features
 
 - **Shop** — Browse ~54 items with category tabs, search, and package weights
 - **Cart** — Running weight vs per-order limit (default 10 lb); stored in `localStorage`
-- **Checkout** — Server-validated weight cap; optional household name
-- **Status** — `/status?name=...` lookup for allocated vs requested items
+- **Checkout** — Server-validated weight cap; no household names collected
 - **Community Give** — `/community` public needs board and `/community/pledge` donor pledges
 - **Admin** — Password-protected dashboard with demand weight vs trip limit
-- **Store inventory** — Enter surplus qty and expiry per item
-- **Plan pickup** — Interactive planner with weight bar and greedy “Suggest fill”
-- **Community admin** — Preview shortages, publish board, moderate pledges
-- **Archive** — Rounds include fulfillment shortfalls, pledges, and trip metadata
-- **SQLite / Turso** — Orders, pledges, and planning data persist (local SQLite in dev, Turso on Render)
+- **Staff capacity** — Daily category + storage level settings that filter the donor board
+- **Community admin** — Preview needs, publish board, moderate pledges
+- **Archive** — Rounds include demand totals, staff capacity snapshot, and pledges
+- **SQLite / Turso** — Orders, pledges, and capacity data persist (local SQLite in dev, Turso on Render)
 
 ## Requirements
 
@@ -49,25 +47,26 @@ For production on Render, set `TURSO_*` variables (see `docs/TURSO_SETUP.md`). F
 
 ### Household shopping
 
-1. **Shoppers** — Add items (watch the weight badge), review cart, place order. Check `/status` after planning.
+1. **Shoppers** — Add items (watch the weight badge), review cart, and place order. No name required.
 
 ### Admin trip workflow
 
 1. Set trip weight limit and per-order cap on the admin dashboard.
 2. View demand totals as orders come in.
-3. Enter **Store inventory**, then **Plan pickup** (use Suggest fill or set pick quantities).
-4. Click **Record fulfillment** on the plan page — this saves shortfalls to the database.
-5. Open **Community** in admin — preview shortages, then **Publish to community**.
-6. Share `/community` with donors (QR code, email, etc.).
-7. Moderate pledges (mark **Received** or **Cancel** as items arrive).
-8. **Archive** the round when done — pledges are closed and `community_published` resets for the next trip.
+3. Open **Staff capacity** — set product category levels (critically low → full) and storage limits (dry / refrigerated / frozen).
+4. Open **Community** in admin — preview open needs, then **Publish to community**.
+5. Share `/community` with donors (QR code, email, etc.).
+6. Moderate pledges (mark **Received** or **Cancel** as items arrive).
+7. **Archive** the round when done — pledges are closed, capacity resets, and `community_published` clears for the next trip.
+
+Legacy **Store inventory** and **Plan pickup** URLs redirect to Staff capacity.
 
 ### Donor workflow
 
 1. Visit `/community` after the board is published.
-2. See items still needed (shortfall minus active pledges).
+2. See items still needed (client demand minus active pledges, filtered by staff capacity).
 3. Submit a pledge at `/community/pledge` — name optional (anonymous supported).
-4. Drop off pledged items; admin marks pledges **Received** — this adds stock, updates fulfillment, and reduces open community need (pledge stays visible as received).
+4. Drop off pledged items; admin marks pledges **Received** (status only — no inventory side effects).
 
 No household names or order details appear on community pages.
 
@@ -75,10 +74,11 @@ No household names or order details appear on community pages.
 
 | Source | Purpose |
 |--------|---------|
-| `items.json` | Static catalog with `weight_lb` per package |
+| `items.json` | Static catalog with `weight_lb` and `storage_type` per item |
 | `data/food_bank.db` | Local SQLite (dev only) |
 | Turso cloud DB | Production persistence on Render free tier |
 | `donor_pledges` table | Donor name, item, qty, status per trip round |
+| `kv_store` `staff_thresholds` | Daily category + storage capacity levels |
 | `kv_store` trip key | Includes `community_published` toggle |
 | Legacy `orders.json` / `archive.json` | Migrated into SQLite on first run |
 

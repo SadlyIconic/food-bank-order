@@ -25,7 +25,6 @@
             </a>
             <span id="cart-weight-badge" class="cart-weight-badge" hidden>0 / 10 lb</span>
             <span id="order-weight-limit" hidden>{{ order_weight_limit_lb | default(10) }}</span>
-            <a href="{{ url_for('household_status') }}" data-i18n="nav_status">Status</a>
             <a href="{{ url_for('community_board') }}" class="nav-give-link" data-i18n="nav_give">Give</a>
             <a href="{{ url_for('admin_login') }}" data-i18n="nav_admin">Admin</a>
           {% endif %}

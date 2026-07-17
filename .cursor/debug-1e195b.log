@@ -1,0 +1,57 @@
+{"sessionId":"1e195b","location":"shop.js:getCatalog","message":"catalog lookup","data":{"hasCatalogEl":false,"page":"/"},"timestamp":1783977012090,"hypothesisId":"A"}
+{"sessionId":"1e195b","location":"shop.js:updateWeightDisplay","message":"weight update","data":{"page":"/","catalogSize":0,"cartLines":1,"computedWeight":0,"limit":10,"text":"0.0 / 10 lb","badgeCount":1},"timestamp":1783977012091,"hypothesisId":"A,B,D"}
+{"sessionId":"1e195b","location":"shop.js:getCatalog","message":"catalog lookup","data":{"hasCatalogEl":false,"page":"/"},"timestamp":1783977012091,"hypothesisId":"A"}
+{"sessionId":"1e195b","location":"shop.js:updateWeightDisplay","message":"weight update","data":{"page":"/","catalogSize":0,"cartLines":1,"computedWeight":0,"limit":10,"text":"0.0 / 10 lb","badgeCount":1},"timestamp":1783977012092,"hypothesisId":"A,B,D"}
+{"sessionId":"1e195b","location":"shop.js:getCatalog","message":"catalog lookup","data":{"hasCatalogEl":false,"page":"/"},"timestamp":1783977012092,"hypothesisId":"A"}
+{"sessionId":"1e195b","location":"shop.js:getCatalog","message":"catalog lookup","data":{"hasCatalogEl":true,"page":"/cart"},"timestamp":1783977014689,"hypothesisId":"A"}
+{"sessionId":"1e195b","location":"shop.js:getCatalog","message":"catalog parsed","data":{"itemCount":54,"sampleHasWeight":true},"timestamp":1783977014690,"hypothesisId":"A"}
+{"sessionId":"1e195b","location":"shop.js:updateWeightDisplay","message":"weight update","data":{"page":"/cart","catalogSize":54,"cartLines":1,"computedWeight":2,"limit":10,"text":"2.0 / 10 lb","badgeCount":1},"timestamp":1783977014691,"hypothesisId":"A,B,D"}
+{"sessionId":"1e195b","location":"shop.js:getCatalog","message":"catalog parsed","data":{"itemCount":54,"sampleHasWeight":true},"timestamp":1783977014692,"hypothesisId":"A"}
+{"sessionId":"1e195b","location":"shop.js:getCatalog","message":"catalog lookup","data":{"hasCatalogEl":true,"page":"/cart"},"timestamp":1783977014692,"hypothesisId":"A"}
+{"sessionId":"1e195b","location":"shop.js:updateWeightDisplay","message":"weight update","data":{"page":"/cart","catalogSize":54,"cartLines":1,"computedWeight":2,"limit":10,"text":"2.0 / 10 lb","badgeCount":1},"timestamp":1783977014693,"hypothesisId":"A,B,D"}
+{"sessionId":"1e195b","location":"shop.js:getCatalog","message":"catalog lookup","data":{"hasCatalogEl":true,"page":"/cart"},"timestamp":1783977014693,"hypothesisId":"A"}
+{"sessionId":"1e195b","location":"shop.js:getCatalog","message":"catalog parsed","data":{"itemCount":54,"sampleHasWeight":true},"timestamp":1783977014694,"hypothesisId":"A"}
+{"sessionId":"1e195b","location":"shop.js:getCatalog","message":"catalog lookup","data":{"hasCatalogEl":true,"page":"/cart"},"timestamp":1783977014695,"hypothesisId":"A"}
+{"sessionId":"1e195b","location":"shop.js:getCatalog","message":"catalog parsed","data":{"itemCount":54,"sampleHasWeight":true},"timestamp":1783977014695,"hypothesisId":"A"}
+{"sessionId":"1e195b","location":"shop.js:updateWeightDisplay","message":"weight update","data":{"page":"/cart","catalogSize":54,"cartLines":1,"computedWeight":2,"limit":10,"text":"2.0 / 10 lb","badgeCount":1},"timestamp":1783977014696,"hypothesisId":"A,B,D"}
+{"sessionId":"1e195b","location":"shop.js:getCatalog","message":"catalog lookup","data":{"hasCatalogEl":false,"page":"/"},"timestamp":1783977015821,"hypothesisId":"A"}
+{"sessionId":"1e195b","location":"shop.js:updateWeightDisplay","message":"weight update","data":{"page":"/","catalogSize":0,"cartLines":1,"computedWeight":0,"limit":10,"text":"0.0 / 10 lb","badgeCount":1},"timestamp":1783977015823,"hypothesisId":"A,B,D"}
+{"sessionId":"1e195b","location":"shop.js:updateWeightDisplay","message":"weight update","data":{"page":"/","catalogSize":0,"cartLines":1,"computedWeight":0,"limit":10,"text":"0.0 / 10 lb","badgeCount":1},"timestamp":1783977015824,"hypothesisId":"A,B,D"}
+{"sessionId":"1e195b","location":"shop.js:getCatalog","message":"catalog lookup","data":{"hasCatalogEl":false,"page":"/"},"timestamp":1783977015825,"hypothesisId":"A"}
+{"sessionId":"1e195b","location":"shop.js:getCatalog","message":"catalog lookup","data":{"hasCatalogEl":false,"page":"/"},"timestamp":1783977015824,"hypothesisId":"A"}
+{"sessionId":"1e195b","location":"shop.js:getCatalog","message":"catalog lookup","data":{"hasCatalogEl":true,"page":"/"},"timestamp":1783977031859,"hypothesisId":"A"}
+{"sessionId":"1e195b","location":"shop.js:updateWeightDisplay","message":"weight update","data":{"page":"/","catalogSize":54,"cartLines":1,"computedWeight":2,"limit":10,"text":"2.0 / 10 lb","badgeCount":1},"timestamp":1783977031863,"hypothesisId":"A,B,D"}
+{"sessionId":"1e195b","location":"shop.js:getCatalog","message":"catalog lookup","data":{"hasCatalogEl":true,"page":"/"},"timestamp":1783977031864,"hypothesisId":"A"}
+{"sessionId":"1e195b","location":"shop.js:getCatalog","message":"catalog parsed","data":{"itemCount":54,"sampleHasWeight":true},"timestamp":1783977031860,"hypothesisId":"A"}
+{"sessionId":"1e195b","location":"shop.js:getCatalog","message":"catalog parsed","data":{"itemCount":54,"sampleHasWeight":true},"timestamp":1783977031864,"hypothesisId":"A"}
+{"sessionId":"1e195b","location":"shop.js:updateWeightDisplay","message":"weight update","data":{"page":"/","catalogSize":54,"cartLines":1,"computedWeight":2,"limit":10,"text":"2.0 / 10 lb","badgeCount":1},"timestamp":1783977031861,"hypothesisId":"A,B,D"}
+{"sessionId":"1e195b","location":"shop.js:getCatalog","message":"catalog lookup","data":{"hasCatalogEl":true,"page":"/"},"timestamp":1783977031862,"hypothesisId":"A"}
+{"sessionId":"1e195b","location":"shop.js:getCatalog","message":"catalog parsed","data":{"itemCount":54,"sampleHasWeight":true},"timestamp":1783977031863,"hypothesisId":"A"}
+{"sessionId":"1e195b","location":"shop.js:getCatalog","message":"catalog lookup","data":{"hasCatalogEl":true,"page":"/"},"timestamp":1783977034996,"hypothesisId":"A"}
+{"sessionId":"1e195b","location":"shop.js:getCatalog","message":"catalog parsed","data":{"itemCount":54,"sampleHasWeight":true},"timestamp":1783977034996,"hypothesisId":"A"}
+{"sessionId":"1e195b","location":"shop.js:updateWeightDisplay","message":"weight update","data":{"page":"/","catalogSize":54,"cartLines":2,"computedWeight":3.2,"limit":10,"text":"3.2 / 10 lb","badgeCount":1},"timestamp":1783977034996,"hypothesisId":"A,B,D"}
+{"sessionId":"1e195b","location":"shop.js:addToCart","message":"item added","data":{"itemId":"bananas","qty":1,"catalogKeys":54,"itemWeight":1.2},"timestamp":1783977034997,"hypothesisId":"D,E"}
+{"sessionId":"1e195b","location":"shop.js:getCatalog","message":"catalog lookup","data":{"hasCatalogEl":true,"page":"/"},"timestamp":1783977036650,"hypothesisId":"A"}
+{"sessionId":"1e195b","location":"shop.js:getCatalog","message":"catalog parsed","data":{"itemCount":54,"sampleHasWeight":true},"timestamp":1783977036651,"hypothesisId":"A"}
+{"sessionId":"1e195b","location":"shop.js:updateWeightDisplay","message":"weight update","data":{"page":"/","catalogSize":54,"cartLines":2,"computedWeight":4.4,"limit":10,"text":"4.4 / 10 lb","badgeCount":1},"timestamp":1783977036651,"hypothesisId":"A,B,D"}
+{"sessionId":"1e195b","location":"shop.js:addToCart","message":"item added","data":{"itemId":"bananas","qty":1,"catalogKeys":54,"itemWeight":1.2},"timestamp":1783977036652,"hypothesisId":"D,E"}
+{"sessionId":"1e195b","location":"shop.js:getCatalog","message":"catalog lookup","data":{"hasCatalogEl":true,"page":"/"},"timestamp":1783977037595,"hypothesisId":"A"}
+{"sessionId":"1e195b","location":"shop.js:getCatalog","message":"catalog parsed","data":{"itemCount":54,"sampleHasWeight":true},"timestamp":1783977037596,"hypothesisId":"A"}
+{"sessionId":"1e195b","location":"shop.js:updateWeightDisplay","message":"weight update","data":{"page":"/","catalogSize":54,"cartLines":3,"computedWeight":5.4,"limit":10,"text":"5.4 / 10 lb","badgeCount":1},"timestamp":1783977037596,"hypothesisId":"A,B,D"}
+{"sessionId":"1e195b","location":"shop.js:addToCart","message":"item added","data":{"itemId":"oranges","qty":1,"catalogKeys":54,"itemWeight":1},"timestamp":1783977037596,"hypothesisId":"D,E"}
+{"sessionId":"1e195b","location":"shop.js:getCatalog","message":"catalog lookup","data":{"hasCatalogEl":true,"page":"/"},"timestamp":1783977038962,"hypothesisId":"A"}
+{"sessionId":"1e195b","location":"shop.js:getCatalog","message":"catalog parsed","data":{"itemCount":54,"sampleHasWeight":true},"timestamp":1783977038963,"hypothesisId":"A"}
+{"sessionId":"1e195b","location":"shop.js:addToCart","message":"item added","data":{"itemId":"onions","qty":1,"catalogKeys":54,"itemWeight":1},"timestamp":1783977038964,"hypothesisId":"D,E"}
+{"sessionId":"1e195b","location":"shop.js:updateWeightDisplay","message":"weight update","data":{"page":"/","catalogSize":54,"cartLines":4,"computedWeight":6.4,"limit":10,"text":"6.4 / 10 lb","badgeCount":1},"timestamp":1783977038963,"hypothesisId":"A,B,D"}
+{"sessionId":"1e195b","location":"shop.js:getCatalog","message":"catalog lookup","data":{"hasCatalogEl":true,"page":"/"},"timestamp":1783977040146,"hypothesisId":"A"}
+{"sessionId":"1e195b","location":"shop.js:getCatalog","message":"catalog parsed","data":{"itemCount":54,"sampleHasWeight":true},"timestamp":1783977040146,"hypothesisId":"A"}
+{"sessionId":"1e195b","location":"shop.js:updateWeightDisplay","message":"weight update","data":{"page":"/","catalogSize":54,"cartLines":4,"computedWeight":7.6,"limit":10,"text":"7.6 / 10 lb","badgeCount":1},"timestamp":1783977040147,"hypothesisId":"A,B,D"}
+{"sessionId":"1e195b","location":"shop.js:addToCart","message":"item added","data":{"itemId":"bananas","qty":1,"catalogKeys":54,"itemWeight":1.2},"timestamp":1783977040147,"hypothesisId":"D,E"}
+{"sessionId":"1e195b","location":"shop.js:getCatalog","message":"catalog lookup","data":{"hasCatalogEl":true,"page":"/"},"timestamp":1783977041714,"hypothesisId":"A"}
+{"sessionId":"1e195b","location":"shop.js:getCatalog","message":"catalog parsed","data":{"itemCount":54,"sampleHasWeight":true},"timestamp":1783977041714,"hypothesisId":"A"}
+{"sessionId":"1e195b","location":"shop.js:addToCart","message":"item added","data":{"itemId":"bananas","qty":1,"catalogKeys":54,"itemWeight":1.2},"timestamp":1783977041715,"hypothesisId":"D,E"}
+{"sessionId":"1e195b","location":"shop.js:updateWeightDisplay","message":"weight update","data":{"page":"/","catalogSize":54,"cartLines":4,"computedWeight":8.8,"limit":10,"text":"8.8 / 10 lb","badgeCount":1},"timestamp":1783977041714,"hypothesisId":"A,B,D"}
+{"sessionId":"1e195b","location":"shop.js:getCatalog","message":"catalog lookup","data":{"hasCatalogEl":true,"page":"/"},"timestamp":1783977043319,"hypothesisId":"A"}
+{"sessionId":"1e195b","location":"shop.js:updateWeightDisplay","message":"weight update","data":{"page":"/","catalogSize":54,"cartLines":4,"computedWeight":9.8,"limit":10,"text":"9.8 / 10 lb","badgeCount":1},"timestamp":1783977043320,"hypothesisId":"A,B,D"}
+{"sessionId":"1e195b","location":"shop.js:getCatalog","message":"catalog parsed","data":{"itemCount":54,"sampleHasWeight":true},"timestamp":1783977043320,"hypothesisId":"A"}
+{"sessionId":"1e195b","location":"shop.js:addToCart","message":"item added","data":{"itemId":"oranges","qty":1,"catalogKeys":54,"itemWeight":1},"timestamp":1783977043320,"hypothesisId":"D,E"}

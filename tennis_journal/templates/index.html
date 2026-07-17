@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Matches — Tennis Journal{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <h1>Matches</h1>
+  <form class="search-form" method="get" action="{{ url_for('index') }}">
+    <input type="search" name="q" value="{{ q }}" placeholder="Search by opponent…">
+    <button type="submit" class="btn">Search</button>
+    {% if q %}
+      <a href="{{ url_for('index') }}" class="btn btn-muted">Clear</a>
+    {% endif %}
+  </form>
+</section>
+
+{% if entries %}
+  <div class="entry-list">
+    {% for entry in entries %}
+      <article class="entry-card">
+        <div class="entry-card-header">
+          <div>
+            <h2><a href="{{ url_for('view_entry', entry_id=entry.id) }}">{{ entry.opponent }}</a></h2>
+            <p class="meta">
+              {{ entry.date }}
+              {% if entry.result %}
+                · <span class="result result-{{ entry.result }}">{{ entry.result|capitalize }}</span>
+              {% endif %}
+              {% if entry.match_type and entry.match_type != 'singles' %}
+                · {{ entry.match_type|capitalize }}
+              {% endif %}
+            </p>
+          </div>
+          <p class="score">{{ entry.score }}</p>
+        </div>
+        {% if entry.notes %}
+          <p class="notes-preview">{{ entry.notes[:120] }}{% if entry.notes|length > 120 %}…{% endif %}</p>
+        {% endif %}
+        <div class="entry-actions">
+          <a href="{{ url_for('view_entry', entry_id=entry.id) }}">View</a>
+          <a href="{{ url_for('edit_entry', entry_id=entry.id) }}">Edit</a>
+          <form method="post" action="{{ url_for('delete_entry', entry_id=entry.id) }}" class="inline-form"
+                onsubmit="return confirm('Delete this entry?');">
+            <button type="submit" class="link-btn link-danger">Delete</button>
+          </form>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="empty-state">
+    {% if q %}
+      <p>No matches found for “{{ q }}”.</p>
+      <a href="{{ url_for('index') }}" class="btn">Show all</a>
+    {% else %}
+      <p>No matches yet — add your first entry.</p>
+      <a href="{{ url_for('create_entry') }}" class="btn btn-primary">New entry</a>
+    {% endif %}
+  </div>
+{% endif %}
+{% endblock %}

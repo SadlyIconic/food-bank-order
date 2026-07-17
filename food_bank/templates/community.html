@@ -14,13 +14,13 @@
     {% endif %}
   </p>
   <p class="page-subtitle" data-i18n="community_needs_subtitle">
-    Help fill gaps after the food bank's pickup run. No login required.
+    Help fill what clients requested this trip. No login required.
   </p>
 </div>
 
 {% if board.state == 'not_recorded' %}
   <div class="empty-state community-empty">
-    <p data-i18n="community_not_recorded">Fulfillment has not been recorded yet. Check back after the food bank plans this trip.</p>
+    <p data-i18n="community_not_recorded">Capacity has not been set yet. Check back after staff updates the donor board.</p>
   </div>
 {% elif board.state == 'unpublished' %}
   <div class="empty-state community-empty">
@@ -68,18 +68,15 @@
             <h3 class="community-need-name">{{ item.name }}</h3>
             <div class="community-progress">
               <div class="community-progress-labels">
-                <span data-i18n="community_needed">Needed</span>: {{ item.shortfall }}
+                <span data-i18n="community_requested">Requested</span>: {{ item.requested }}
                 · <span data-i18n="community_pledged">Pledged</span>: {{ item.pledged }}
                 · <strong><span data-i18n="community_still_open">Still open</span>: {{ item.remaining_need }}</strong>
               </div>
               <div class="community-progress-track" role="presentation">
-                {% set picked_pct = (100 * item.picked / item.requested) if item.requested else 0 %}
-                {% set pledged_pct = (100 * item.pledged / item.shortfall) if item.shortfall else 0 %}
-                <div class="community-progress-segment community-progress-picked" style="width: {{ picked_pct }}%"></div>
+                {% set pledged_pct = (100 * item.pledged / item.requested) if item.requested else 0 %}
                 <div class="community-progress-segment community-progress-pledged" style="width: {{ pledged_pct }}%"></div>
               </div>
               <div class="community-progress-legend">
-                <span class="legend-picked" data-i18n="community_legend_picked">Picked</span>
                 <span class="legend-pledged" data-i18n="community_legend_pledged">Pledged</span>
                 <span class="legend-open" data-i18n="community_legend_open">Still open</span>
               </div>

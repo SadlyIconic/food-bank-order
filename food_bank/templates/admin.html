@@ -9,8 +9,7 @@
     <p class="page-subtitle">Aggregated shopping totals for the current round.</p>
   </div>
   <div class="header-actions">
-    <a href="{{ url_for('admin_inventory') }}" class="btn btn-sm">Store inventory</a>
-    <a href="{{ url_for('admin_plan') }}" class="btn btn-sm">Plan pickup</a>
+    <a href="{{ url_for('admin_capacity') }}" class="btn btn-sm">Staff capacity</a>
     <a href="{{ url_for('admin_community') }}" class="btn btn-sm">Community</a>
     <form method="post" action="{{ url_for('admin_logout') }}" class="inline-form">
       <button type="submit" class="btn btn-muted">Log out</button>
@@ -88,7 +87,7 @@
   </div>
 
   {% if over_by > 0 %}
-    <p class="weight-warning">Total demand exceeds the trip weight limit. Use <a href="{{ url_for('admin_plan') }}">Plan pickup</a> to choose what to take.</p>
+    <p class="weight-warning">Total demand exceeds the trip weight limit. Review demand totals and adjust trip settings as needed.</p>
   {% endif %}
 
   {% if totals %}
@@ -139,7 +138,8 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th>Household</th>
+              <th>Order</th>
+              <th>Placed</th>
               <th class="num-col">Items</th>
               <th class="num-col">Weight</th>
             </tr>
@@ -147,7 +147,8 @@
           <tbody>
             {% for order in orders_detail %}
               <tr>
-                <td>{{ order.household_name or 'Anonymous' }}</td>
+                <td>#{{ loop.index }}</td>
+                <td>{{ order.created_at[:10] }} {{ order.created_at[11:16] }}</td>
                 <td class="num-col">{{ order.lines | length }}</td>
                 <td class="num-col">{{ '%.1f' | format(order.weight_lb) }} lb</td>
               </tr>

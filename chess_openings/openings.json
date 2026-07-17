@@ -1,0 +1,303 @@
+{
+  "openings": [
+    {
+      "id": "queens-gambit",
+      "name": "Queen's Gambit",
+      "color": "white",
+      "tagline": "Fight for the center with 2.c4",
+      "firstMoves": "1.d4 d5 2.c4",
+      "overview": "The Queen's Gambit is one of the oldest and most respected openings for White. By offering the c-pawn on move two, White challenges Black's central pawn on d5 and fights for space and development. Most strong players decline the gambit, leading to rich positional battles rather than wild tactics.",
+      "goals": [
+        "Establish a strong pawn center with d4 and e3/e4",
+        "Develop pieces harmoniously (Nc3, Bg5, Nf3)",
+        "Pressure the c6 and e6 squares and the d5 pawn",
+        "Prepare a minority attack on the queenside in many lines"
+      ],
+      "advantages": [
+        "Solid, principled play with clear strategic ideas",
+        "White often gets a space advantage and easier development",
+        "Black must play accurately to equalize; small errors can be punished",
+        "Leads to middlegames where White's plans are well understood"
+      ],
+      "disadvantages": [
+        "The gambit is not truly 'won' — Black can hold comfortably with correct play",
+        "Some lines (Slav, Semi-Slav) are very drawish at high levels",
+        "Requires patience; fewer early tactical shots than 1.e4 openings",
+        "Black's ...c6 or ...e6 structures can be very solid"
+      ],
+      "longTermPlans": [
+        "Break with e4 when the center is prepared",
+        "Queenside minority attack (...b5-b4 ideas for White in QGD)",
+        "Trade dark-squared bishops and target weak dark squares",
+        "Use the c-file after exchanges on c5 or cxd5"
+      ],
+      "mainline": {
+        "name": "Orthodox Queen's Gambit Declined",
+        "moves": ["d4", "d5", "c4", "e6", "Nc3", "Nf6", "Bg5", "Be7", "e3", "O-O", "Nf3", "Nbd7"],
+        "notes": "White builds a strong center with e3 and develops naturally. Black solidifies with ...Be7 and ...Nbd7, keeping the d5 pawn defended. The position is balanced but rich in strategic ideas."
+      },
+      "sidelines": [
+        {
+          "name": "Queen's Gambit Accepted",
+          "moves": ["d4", "d5", "c4", "dxc4"],
+          "notes": "Black accepts the pawn but must return it later or face a strong White center. White often recaptures with e3 and Bxc4, gaining rapid development and central control."
+        },
+        {
+          "name": "Slav Defense",
+          "moves": ["d4", "d5", "c4", "c6"],
+          "notes": "Black supports d5 without blocking the c8-bishop. Very solid and popular at all levels. White may continue with Nc3, Nf3, or the Exchange Variation."
+        },
+        {
+          "name": "Semi-Slav",
+          "moves": ["d4", "d5", "c4", "c6", "Nc3", "Nf6", "Nf3", "e6"],
+          "notes": "Combines Slav structure with QGD flexibility. Black gets a very solid position but the bishop on c8 can be passive. A main battleground in modern chess."
+        }
+      ],
+      "lichessResources": [
+        {
+          "name": "Queen's Gambit Declined",
+          "url": "https://lichess.org/opening/Queens_Gambit_Declined",
+          "description": "Full QGD tree with master games and engine stats"
+        },
+        {
+          "name": "Queen's Gambit Accepted",
+          "url": "https://lichess.org/opening/Queens_Gambit_Accepted",
+          "description": "Explore accepted gambit lines and recapture setups"
+        },
+        {
+          "name": "Slav & Semi-Slav",
+          "url": "https://lichess.org/opening/Slav_Defense",
+          "description": "Deep Slav structures including Semi-Slav branches"
+        },
+        {
+          "name": "Opening Explorer from 2.c4",
+          "url": "https://lichess.org/analysis/opening/queens-gambit",
+          "description": "Interactive explorer starting at 1.d4 d5 2.c4"
+        }
+      ]
+    },
+    {
+      "id": "vienna-gambit",
+      "name": "Vienna Gambit",
+      "color": "white",
+      "tagline": "Sacrifice a pawn for rapid development",
+      "firstMoves": "1.e4 e5 2.Nc3 Nf6 3.f4",
+      "overview": "The Vienna Gambit is an aggressive way to fight for the initiative against 1...e5. After 2...Nf6 (the Vienna Game), White strikes with 3.f4, offering a pawn to open lines and accelerate development. It suits players who prefer dynamic, attacking positions over slow maneuvering.",
+      "goals": [
+        "Open the f-file and gain kingside attacking chances",
+        "Develop quickly with Nc3, d4, and Bc4 or Be2",
+        "Seize space with e5 when Black takes on f4",
+        "Create tactical threats against the black king"
+      ],
+      "advantages": [
+        "Surprises opponents who expect quiet Vienna Game lines",
+        "Leads to open, tactical positions where White's lead in development matters",
+        "Black must defend accurately from early on",
+        "Less theory-heavy than mainline Ruy Lopez or Italian"
+      ],
+      "disadvantages": [
+        "Objectively the pawn sacrifice may not be enough for a full advantage",
+        "Black can decline with 3...d5 or 3...Nc6 for solid equality",
+        "If White overextends, the missing f-pawn becomes a weakness",
+        "Requires good tactical vision to justify the gambit"
+      ],
+      "longTermPlans": [
+        "Push d4 and e5 to cramp Black's position",
+        "Castle kingside and bring rooks to the f-file",
+        "Target f7 and the weakened kingside dark squares",
+        "Transition to a favorable endgame if Black returns the material"
+      ],
+      "mainline": {
+        "name": "Main Gambit Line",
+        "moves": ["e4", "e5", "Nc3", "Nf6", "f4", "exf4", "e5", "Qe7", "d4"],
+        "notes": "Black takes the pawn but the queen move to e7 blocks the f8-bishop. White builds a powerful pawn center with d4 and e5, gaining space and open lines for a kingside attack."
+      },
+      "sidelines": [
+        {
+          "name": "Declined with 3...d5",
+          "moves": ["e4", "e5", "Nc3", "Nf6", "f4", "d5"],
+          "notes": "Black strikes back in the center instead of taking the pawn. White can capture on d5 or play exd5; the position becomes sharp but less gambit-like."
+        },
+        {
+          "name": "Vienna Game (3...Nc6)",
+          "moves": ["e4", "e5", "Nc3", "Nc6", "f4"],
+          "notes": "Black develops the knight instead of playing ...Nf6. White can still push f4 for a King's Gambit-style attack, or play Bc4 for quieter development."
+        },
+        {
+          "name": "Quiet Vienna (3.g3)",
+          "moves": ["e4", "e5", "Nc3", "Nf6", "g3"],
+          "notes": "A positional alternative to the gambit. White fianchettos the bishop and delays f4, aiming for a flexible setup without immediate pawn sacrifices."
+        }
+      ],
+      "lichessResources": [
+        {
+          "name": "Vienna Gambit",
+          "url": "https://lichess.org/opening/Vienna_Gambit",
+          "description": "Main gambit lines after 3.f4 exf4"
+        },
+        {
+          "name": "Vienna Game",
+          "url": "https://lichess.org/opening/Vienna_Game",
+          "description": "Non-gambit Vienna branches including 3...Nc6"
+        },
+        {
+          "name": "Opening Explorer from 3.f4",
+          "url": "https://lichess.org/analysis/opening/vienna-gambit",
+          "description": "Interactive tree from the gambit pawn push"
+        }
+      ]
+    },
+    {
+      "id": "caro-kann",
+      "name": "Caro-Kann",
+      "color": "black",
+      "tagline": "Solid structure against 1.e4",
+      "firstMoves": "1.e4 c6 2.d4 d5",
+      "overview": "The Caro-Kann is one of the most reliable defenses to 1.e4. Black prepares ...d5 without weakening the pawn structure, building a sturdy wall that is hard for White to break. The Classical Variation with ...dxe4 and ...Bf5 gives Black active piece play while maintaining solidity.",
+      "goals": [
+        "Challenge White's e4 pawn with ...d5",
+        "Develop the light-squared bishop outside the pawn chain (...Bf5 or ...Bg4)",
+        "Keep a solid pawn structure with c6 and e6",
+        "Neutralize White's space advantage with careful piece placement"
+      ],
+      "advantages": [
+        "Very solid — Black rarely gets a bad position out of the opening",
+        "Clear development plan for the c8-bishop (unlike the French Defense)",
+        "Leads to positions where Black understands the middlegame plans",
+        "Less tactical trickery required than in Sicilian lines"
+      ],
+      "disadvantages": [
+        "Black's light-squared bishop can become a problem if trapped or exchanged",
+        "White often gets a space advantage and easier queenside play",
+        "Some lines (Advance, Exchange) can be slightly passive for Black",
+        "Requires knowledge of several sub-variations to handle all White setups"
+      ],
+      "longTermPlans": [
+        "Break with ...c5 or ...e5 when the center is ready",
+        "Use the c-file after ...cxd4 and recapture",
+        "Trade pieces to reduce White's space advantage",
+        "Target isolated or backward pawns in the endgame"
+      ],
+      "mainline": {
+        "name": "Classical Variation",
+        "moves": ["e4", "c6", "d4", "d5", "Nc3", "dxe4", "Nxe4", "Bf5"],
+        "notes": "Black exchanges on d4 and develops the bishop to f5 before playing ...e6. This is the most principled way to activate the c8-bishop and fight for equality."
+      },
+      "sidelines": [
+        {
+          "name": "Advance Variation",
+          "moves": ["e4", "c6", "d4", "d5", "e5"],
+          "notes": "White gains space and locks the structure. Black responds with ...Bf5 or ...c5 to undermine the center. Sharp and positional — Black must know the pawn breaks."
+        },
+        {
+          "name": "Exchange Variation",
+          "moves": ["e4", "c6", "d4", "d5", "exd5", "cxd5"],
+          "notes": "White simplifies to an open position with an isolated d-pawn for Black. Black gets easy development and can pressure the d4 pawn."
+        },
+        {
+          "name": "Panov-Botvinnik Attack",
+          "moves": ["e4", "c6", "d4", "d5", "exd5", "cxd5", "c4"],
+          "notes": "White strikes in the center with c4, leading to IQP (isolated queen pawn) positions. Black develops normally and targets the d4 pawn."
+        }
+      ],
+      "lichessResources": [
+        {
+          "name": "Caro-Kann Classical",
+          "url": "https://lichess.org/opening/Caro-Kann_Defense_Classical_Variation",
+          "description": "Full classical line with ...Bf5 and ...e6 setups"
+        },
+        {
+          "name": "Advance Variation",
+          "url": "https://lichess.org/opening/Caro-Kann_Defense_Advance_Variation",
+          "description": "Extensive Advance (3.e5) sub-variations"
+        },
+        {
+          "name": "Caro-Kann Overview",
+          "url": "https://lichess.org/opening/Caro-Kann_Defense",
+          "description": "All major Caro-Kann branches on Lichess"
+        },
+        {
+          "name": "Opening Explorer from 1...c6",
+          "url": "https://lichess.org/analysis/opening/caro-kann-defense",
+          "description": "Interactive explorer for Black's setup"
+        }
+      ]
+    },
+    {
+      "id": "kings-indian",
+      "name": "King's Indian",
+      "color": "black",
+      "tagline": "Counterattack from a flexible fianchetto",
+      "firstMoves": "1.d4 Nf6 2.c4 g6 3.Nc3 Bg7",
+      "overview": "The King's Indian Defense lets White build a big center, then Black strikes back with ...e5 or ...c5. The fianchettoed bishop on g7 becomes a powerful piece, eyeing the long diagonal. It is a favorite of fighting players who enjoy dynamic, unbalanced positions.",
+      "goals": [
+        "Allow White's center, then challenge it with ...e5 or ...c5",
+        "Fianchetto the kingside bishop to g7 for long-diagonal pressure",
+        "Castle kingside and prepare ...f5 or ...Nfd7-Nf6 rerouting",
+        "Create kingside counterplay against White's queenside expansion"
+      ],
+      "advantages": [
+        "Rich, dynamic positions with winning chances for Black",
+        "White's overextended center can become a target",
+        "The g7-bishop is often Black's best piece in the middlegame",
+        "Teaches important strategic themes: pawn storms, piece maneuvers, opposite-side castling"
+      ],
+      "disadvantages": [
+        "White can get a large space advantage if Black is too slow",
+        "Some lines (Samisch, Four Pawns) are very dangerous for Black",
+        "Requires precise timing for the ...e5 or ...c5 breaks",
+        "Can be cramped in the early middlegame before counterplay arrives"
+      ],
+      "longTermPlans": [
+        "Play ...f5-f4 to open the kingside, or ...Nf6-g4-e5 maneuvers",
+        "Trade the g7-bishop for White's c1-bishop when advantageous",
+        "Use the e5 square for knights after ...e5 exchange",
+        "Launch a kingside pawn storm if White castles queenside"
+      ],
+      "mainline": {
+        "name": "Classical King's Indian",
+        "moves": ["d4", "Nf6", "c4", "g6", "Nc3", "Bg7", "e4", "d6", "Nf3", "O-O", "Be2", "e5"],
+        "notes": "White builds the classical big center. Black castles and plays ...e5, challenging d4. Both sides have clear plans: White may expand on the queenside; Black seeks kingside counterplay."
+      },
+      "sidelines": [
+        {
+          "name": "Samisch Variation",
+          "moves": ["d4", "Nf6", "c4", "g6", "Nc3", "Bg7", "e4", "d6", "f3"],
+          "notes": "White plays f3 to support e4 and prepare a kingside castle. Black often responds with ...c5 or ...b5. Sharp and theoretical — Black must know the pawn breaks."
+        },
+        {
+          "name": "Four Pawns Attack",
+          "moves": ["d4", "Nf6", "c4", "g6", "Nc3", "Bg7", "e4", "d6", "f4"],
+          "notes": "White grabs maximum space with f4. Black must counter quickly with ...c5 or ...e5 before being overrun. Very tactical and double-edged."
+        },
+        {
+          "name": "Fianchetto Variation (White)",
+          "moves": ["d4", "Nf6", "c4", "g6", "Nf3", "Bg7", "g3", "O-O", "Bg2", "d6"],
+          "notes": "White also fianchettos, leading to a quieter positional battle. Black can play ...Nbd7, ...e5, or ...c5 depending on taste."
+        }
+      ],
+      "lichessResources": [
+        {
+          "name": "Classical King's Indian",
+          "url": "https://lichess.org/opening/Kings_Indian_Defense_Classical_Variation",
+          "description": "Deep classical lines with ...e5 and queenside plans"
+        },
+        {
+          "name": "Samisch Variation",
+          "url": "https://lichess.org/opening/Kings_Indian_Defense_Samisch_Variation",
+          "description": "Full Samisch (5.f3) theory tree"
+        },
+        {
+          "name": "Four Pawns Attack",
+          "url": "https://lichess.org/opening/Kings_Indian_Defense_Four_Pawns_Attack",
+          "description": "Extensive Four Pawns (5.f4) variations"
+        },
+        {
+          "name": "Opening Explorer from ...Bg7",
+          "url": "https://lichess.org/analysis/opening/kings-indian-defense",
+          "description": "Interactive explorer for the KID setup"
+        }
+      ]
+    }
+  ]
+}
