@@ -24,7 +24,12 @@ DEFAULT_TRIP = {
     "trip_name": "",
     "pickup_date": "",
     "store_name": "",
+    "community_published": False,
 }
+
+MAX_PLEDGE_QTY = 50
+MAX_PLEDGE_QTY_PER_ITEM = 20
+ANONYMOUS_DONOR_NAME = "Anonymous donor"
 
 ITEMS: list[dict] = []
 _items_mtime: float | None = None
@@ -66,6 +71,17 @@ def _init_schema(conn) -> None:
         CREATE TABLE IF NOT EXISTS kv_store (
             key TEXT PRIMARY KEY,
             value_json TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS donor_pledges (
+            id TEXT PRIMARY KEY,
+            created_at TEXT NOT NULL,
+            round_id TEXT,
+            donor_display_name TEXT NOT NULL,
+            item_id TEXT NOT NULL,
+            quantity INTEGER NOT NULL,
+            note TEXT,
+            status TEXT NOT NULL DEFAULT 'pledged'
         );
         """
     )
@@ -576,6 +592,308 @@ def lookup_household_status(household_name: str) -> dict | None:
     return None
 
 
+def current_round_id() -> str:
+    """Snapshot key tying pledges to the active trip."""
+    trip = get_trip_settings()
+    name = (trip.get("trip_name") or "").strip() or "trip"
+    date = (trip.get("pickup_date") or "").strip() or "unknown"
+    return f"{name}|{date}"
+
+
+def _pledged_qty_by_item(round_id: str | None = None, status: str = "pledged") -> dict[str, int]:
+    rid = round_id if round_id is not None else current_round_id()
+    with get_conn() as conn:
+        rows = conn.execute(
+            """SELECT item_id, SUM(quantity) AS total
+               FROM donor_pledges
+               WHERE round_id = ? AND status = ?
+               GROUP BY item_id""",
+            (rid, status),
+        ).fetchall()
+    return {row["item_id"]: int(row["total"]) for row in rows}
+
+
+def get_community_needs(
+    *,
+    include_unpublished: bool = False,
+    admin_preview: bool = False,
+) -> dict:
+    """Public needs board data — no household names or order details."""
+    show_unpublished = include_unpublished or admin_preview
+    trip = get_trip_settings()
+    published = bool(trip.get("community_published"))
+    fulfillment = get_fulfillment()
+    has_fulfillment = bool(fulfillment.get("items")) or bool(fulfillment.get("computed_at"))
+
+    trip_context = {
+        "trip_name": trip.get("trip_name", ""),
+        "pickup_date": trip.get("pickup_date", ""),
+        "store_name": trip.get("store_name", ""),
+    }
+
+    if not has_fulfillment:
+        return {
+            "published": published,
+            "ready": False,
+            "has_fulfillment": False,
+            "all_covered": False,
+            "items": [],
+            "pledges": [],
+            "categories": [],
+            "donors": [],
+            "trip": trip_context,
+            "computed_at": "",
+            "state": "not_recorded",
+            "round_id": current_round_id(),
+        }
+
+    if not published and not show_unpublished:
+        return {
+            "published": False,
+            "ready": True,
+            "has_fulfillment": True,
+            "all_covered": False,
+            "items": [],
+            "pledges": [],
+            "categories": [],
+            "donors": [],
+            "trip": trip_context,
+            "computed_at": fulfillment.get("computed_at", ""),
+            "state": "unpublished",
+            "round_id": current_round_id(),
+        }
+
+    item_map = get_item_map()
+    pledged_by_item = _pledged_qty_by_item()
+    items: list[dict] = []
+    categories: set[str] = set()
+
+    for row in fulfillment.get("items", []):
+        shortfall = int(row.get("shortfall", 0) or 0)
+        if shortfall <= 0:
+            continue
+        item_id = row["item_id"]
+        catalog = item_map.get(item_id, {})
+        pledged = pledged_by_item.get(item_id, 0)
+        remaining = max(0, shortfall - pledged)
+        requested = int(row.get("requested", 0) or 0)
+        picked = int(row.get("picked", 0) or 0)
+        category = catalog.get("category", "")
+        if category:
+            categories.add(category)
+        items.append(
+            {
+                "item_id": item_id,
+                "name": row.get("name", catalog.get("name", item_id)),
+                "category": category,
+                "unit": row.get("unit", catalog.get("unit", "")),
+                "image": f"images/items/{item_id}.svg",
+                "requested": requested,
+                "picked": picked,
+                "shortfall": shortfall,
+                "pledged": pledged,
+                "remaining_need": remaining,
+            }
+        )
+
+    items.sort(key=lambda r: (r["remaining_need"], r["shortfall"]), reverse=True)
+    pledges = get_pledges_for_round()
+    donor_names = sorted(
+        {
+            p["donor_display_name"]
+            for p in pledges
+            if p["donor_display_name"] != ANONYMOUS_DONOR_NAME
+        }
+    )
+
+    if not items:
+        state = "all_covered"
+    elif all(i["remaining_need"] <= 0 for i in items):
+        state = "pledged_out"
+    else:
+        state = "open"
+
+    return {
+        "published": published,
+        "ready": True,
+        "has_fulfillment": True,
+        "all_covered": len(items) == 0,
+        "items": items,
+        "pledges": pledges,
+        "categories": sorted(categories),
+        "donors": donor_names,
+        "trip": trip_context,
+        "computed_at": fulfillment.get("computed_at", ""),
+        "state": state,
+        "round_id": current_round_id(),
+    }
+
+
+def get_pledges_for_round(round_id: str | None = None, status: str = "pledged") -> list[dict]:
+    rid = round_id if round_id is not None else current_round_id()
+    item_map = get_item_map()
+    with get_conn() as conn:
+        rows = conn.execute(
+            """SELECT id, created_at, round_id, donor_display_name, item_id,
+                      quantity, note, status
+               FROM donor_pledges
+               WHERE round_id = ? AND status = ?
+               ORDER BY created_at DESC""",
+            (rid, status),
+        ).fetchall()
+    pledges = []
+    for row in rows:
+        catalog = item_map.get(row["item_id"], {})
+        pledges.append(
+            {
+                "id": row["id"],
+                "created_at": row["created_at"],
+                "round_id": row["round_id"],
+                "donor_display_name": row["donor_display_name"],
+                "item_id": row["item_id"],
+                "item_name": catalog.get("name", row["item_id"]),
+                "quantity": row["quantity"],
+                "note": row["note"] or "",
+                "status": row["status"],
+            }
+        )
+    return pledges
+
+
+def get_all_pledges_for_round(round_id: str | None = None) -> list[dict]:
+    """All pledges for admin moderation (any status)."""
+    rid = round_id if round_id is not None else current_round_id()
+    item_map = get_item_map()
+    with get_conn() as conn:
+        rows = conn.execute(
+            """SELECT id, created_at, round_id, donor_display_name, item_id,
+                      quantity, note, status
+               FROM donor_pledges
+               WHERE round_id = ?
+               ORDER BY created_at DESC""",
+            (rid,),
+        ).fetchall()
+    pledges = []
+    for row in rows:
+        catalog = item_map.get(row["item_id"], {})
+        pledges.append(
+            {
+                "id": row["id"],
+                "created_at": row["created_at"],
+                "round_id": row["round_id"],
+                "donor_display_name": row["donor_display_name"],
+                "item_id": row["item_id"],
+                "item_name": catalog.get("name", row["item_id"]),
+                "quantity": row["quantity"],
+                "note": row["note"] or "",
+                "status": row["status"],
+            }
+        )
+    return pledges
+
+
+def add_donor_pledge(
+    donor_display_name: str,
+    item_id: str,
+    quantity: int,
+    note: str = "",
+) -> dict:
+    """Record a donor pledge against an item with open community need."""
+    name = (donor_display_name or "").strip()
+    if not name:
+        name = ANONYMOUS_DONOR_NAME
+    if len(name) > 100:
+        raise ValueError("Donor name is too long.")
+
+    item_map = get_item_map()
+    if item_id not in item_map:
+        raise ValueError("Invalid item.")
+
+    try:
+        quantity = int(quantity)
+    except (TypeError, ValueError):
+        raise ValueError("Quantity must be a positive number.") from None
+
+    if quantity < 1:
+        raise ValueError("Quantity must be at least 1.")
+    if quantity > MAX_PLEDGE_QTY:
+        raise ValueError(f"Maximum quantity per pledge is {MAX_PLEDGE_QTY}.")
+
+    trip = get_trip_settings()
+    if not trip.get("community_published"):
+        raise ValueError("Community board is not open for pledges yet.")
+
+    needs = get_community_needs(include_unpublished=True)
+    if not needs.get("ready"):
+        raise ValueError("Fulfillment has not been recorded yet.")
+
+    need_row = next((i for i in needs["items"] if i["item_id"] == item_id), None)
+    if need_row is None:
+        raise ValueError("This item is not on the needs board.")
+    if need_row["remaining_need"] < quantity:
+        raise ValueError(
+            f"Only {need_row['remaining_need']} still needed for this item."
+        )
+    if quantity > MAX_PLEDGE_QTY_PER_ITEM:
+        raise ValueError(f"Maximum quantity per pledge is {MAX_PLEDGE_QTY_PER_ITEM}.")
+
+    note = (note or "").strip()[:500]
+    pledge = {
+        "id": str(uuid.uuid4()),
+        "created_at": _utc_now(),
+        "round_id": current_round_id(),
+        "donor_display_name": name,
+        "item_id": item_id,
+        "quantity": quantity,
+        "note": note,
+        "status": "pledged",
+    }
+    with get_conn() as conn:
+        conn.execute(
+            """INSERT INTO donor_pledges
+               (id, created_at, round_id, donor_display_name, item_id, quantity, note, status)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                pledge["id"],
+                pledge["created_at"],
+                pledge["round_id"],
+                pledge["donor_display_name"],
+                pledge["item_id"],
+                pledge["quantity"],
+                pledge["note"],
+                pledge["status"],
+            ),
+        )
+        conn.commit()
+    catalog = item_map[item_id]
+    return {
+        **pledge,
+        "item_name": catalog.get("name", item_id),
+    }
+
+
+def update_pledge_status(pledge_id: str, status: str) -> dict | None:
+    if status not in ("pledged", "received", "cancelled"):
+        raise ValueError("Invalid pledge status.")
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT id FROM donor_pledges WHERE id = ?", (pledge_id,)
+        ).fetchone()
+        if row is None:
+            return None
+        conn.execute(
+            "UPDATE donor_pledges SET status = ? WHERE id = ?",
+            (status, pledge_id),
+        )
+        conn.commit()
+    pledges = get_all_pledges_for_round()
+    return next((p for p in pledges if p["id"] == pledge_id), None)
+
+
+def set_community_published(published: bool) -> dict:
+    return save_trip_settings({"community_published": bool(published)})
+
+
 def archive_current_round() -> dict | None:
     """Archive current round with fulfillment data and clear working state."""
     orders = get_orders()
@@ -583,6 +901,8 @@ def archive_current_round() -> dict | None:
         return None
 
     fulfillment = save_fulfillment()
+    round_id = current_round_id()
+    pledges_snapshot = get_all_pledges_for_round(round_id)
     totals = aggregate_totals(orders)
     demand_wt = demand_weight_lb(orders)
     trip = get_trip_settings()
@@ -599,6 +919,7 @@ def archive_current_round() -> dict | None:
         "store_inventory": inventory,
         "selection": selection,
         "fulfillment": fulfillment,
+        "donor_pledges": pledges_snapshot,
     }
 
     with get_conn() as conn:
@@ -620,9 +941,16 @@ def archive_current_round() -> dict | None:
             ),
         )
         conn.execute("DELETE FROM orders")
+        conn.execute(
+            "UPDATE donor_pledges SET status = 'received' WHERE round_id = ? AND status = 'pledged'",
+            (round_id,),
+        )
         _kv_set(conn, "store_inventory", {"lines": [], "updated_at": "", "store_name": "", "expires_by": ""})
         _kv_set(conn, "selection", {"lines": [], "total_weight_lb": 0})
         _kv_set(conn, "fulfillment", {"items": [], "households": []})
+        trip = _kv_get(conn, "trip", DEFAULT_TRIP)
+        trip["community_published"] = False
+        _kv_set(conn, "trip", trip)
         conn.commit()
 
     return round_entry

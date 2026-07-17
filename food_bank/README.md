@@ -1,6 +1,6 @@
 # Food Bank Order App
 
-A Flask app for coordinating food bank shopping under a weight limit. Households request items (capped per order), admins see total demand vs trip capacity, enter store surplus, plan what to pick up, and share fulfillment status.
+A Flask app for coordinating food bank shopping under a weight limit. Households request items (capped per order), admins see total demand vs trip capacity, enter store surplus, plan what to pick up, and share fulfillment status. A public **Community Give** area lets donors see remaining shortages and pledge items after fulfillment is recorded.
 
 ## Features
 
@@ -8,11 +8,13 @@ A Flask app for coordinating food bank shopping under a weight limit. Households
 - **Cart** — Running weight vs per-order limit (default 10 lb); stored in `localStorage`
 - **Checkout** — Server-validated weight cap; optional household name
 - **Status** — `/status?name=...` lookup for allocated vs requested items
+- **Community Give** — `/community` public needs board and `/community/pledge` donor pledges
 - **Admin** — Password-protected dashboard with demand weight vs trip limit
 - **Store inventory** — Enter surplus qty and expiry per item
 - **Plan pickup** — Interactive planner with weight bar and greedy “Suggest fill”
-- **Archive** — Rounds include fulfillment shortfalls and trip metadata
-- **SQLite / Turso** — Orders and planning data persist (local SQLite in dev, Turso on Render)
+- **Community admin** — Preview shortages, publish board, moderate pledges
+- **Archive** — Rounds include fulfillment shortfalls, pledges, and trip metadata
+- **SQLite / Turso** — Orders, pledges, and planning data persist (local SQLite in dev, Turso on Render)
 
 ## Requirements
 
@@ -29,7 +31,7 @@ py -m flask --app app run
 
 On Windows, use `py -m flask` instead of `flask` directly.
 
-Open [http://127.0.0.1:5000](http://127.0.0.1:5000) to shop. Admin: `/admin`.
+Open [http://127.0.0.1:5000](http://127.0.0.1:5000) to shop. Admin: `/admin`. Community board: `/community`.
 
 ## Environment variables
 
@@ -45,9 +47,29 @@ For production on Render, set `TURSO_*` variables (see `docs/TURSO_SETUP.md`). F
 
 ## Usage
 
+### Household shopping
+
 1. **Shoppers** — Add items (watch the weight badge), review cart, place order. Check `/status` after planning.
-2. **Admin** — Set trip weight limit and per-order cap. View demand totals. Enter **Store inventory**, then **Plan pickup** (use Suggest fill or set pick quantities). Record fulfillment before archiving.
-3. **Archive** — Reset round saves selection, inventory snapshot, and shortfalls to history.
+
+### Admin trip workflow
+
+1. Set trip weight limit and per-order cap on the admin dashboard.
+2. View demand totals as orders come in.
+3. Enter **Store inventory**, then **Plan pickup** (use Suggest fill or set pick quantities).
+4. Click **Record fulfillment** on the plan page — this saves shortfalls to the database.
+5. Open **Community** in admin — preview shortages, then **Publish to community**.
+6. Share `/community` with donors (QR code, email, etc.).
+7. Moderate pledges (mark **Received** or **Cancel** as items arrive).
+8. **Archive** the round when done — pledges are closed and `community_published` resets for the next trip.
+
+### Donor workflow
+
+1. Visit `/community` after the board is published.
+2. See items still needed (shortfall minus active pledges).
+3. Submit a pledge at `/community/pledge` — name optional (anonymous supported).
+4. Drop off pledged items; admin marks pledges received.
+
+No household names or order details appear on community pages.
 
 ## Data
 
@@ -56,6 +78,8 @@ For production on Render, set `TURSO_*` variables (see `docs/TURSO_SETUP.md`). F
 | `items.json` | Static catalog with `weight_lb` per package |
 | `data/food_bank.db` | Local SQLite (dev only) |
 | Turso cloud DB | Production persistence on Render free tier |
+| `donor_pledges` table | Donor name, item, qty, status per trip round |
+| `kv_store` trip key | Includes `community_published` toggle |
 | Legacy `orders.json` / `archive.json` | Migrated into SQLite on first run |
 
 ## Deploy on Render (free)

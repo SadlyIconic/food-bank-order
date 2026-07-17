@@ -2,7 +2,9 @@
 
 import json
 import os
+from datetime import datetime, timezone
 from functools import wraps
+from types import SimpleNamespace
 
 from flask import (
     Flask,
@@ -19,6 +21,7 @@ import store
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-in-production")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "Iconic")
+PLEDGE_COOLDOWN_SECONDS = 60
 
 store.load()
 
@@ -26,7 +29,10 @@ store.load()
 @app.context_processor
 def inject_globals():
     trip = store.get_trip_settings()
-    return {"order_weight_limit_lb": trip.get("order_weight_limit_lb", 10)}
+    return {
+        "order_weight_limit_lb": trip.get("order_weight_limit_lb", 10),
+        "is_community_page": False,
+    }
 
 
 def admin_required(view):
@@ -38,6 +44,20 @@ def admin_required(view):
         return view(*args, **kwargs)
 
     return wrapped
+
+
+def _pledge_rate_limited() -> bool:
+    last = session.get("last_pledge_at")
+    if not last:
+        return False
+    try:
+        last_dt = datetime.fromisoformat(last.replace("Z", "+00:00"))
+        if last_dt.tzinfo is None:
+            last_dt = last_dt.replace(tzinfo=timezone.utc)
+        elapsed = (datetime.now(timezone.utc) - last_dt).total_seconds()
+        return elapsed < PLEDGE_COOLDOWN_SECONDS
+    except ValueError:
+        return False
 
 
 @app.route("/")
@@ -139,6 +159,68 @@ def household_status():
     name = request.args.get("name", "").strip()
     status = store.lookup_household_status(name) if name else None
     return render_template("status.html", name=name, status=status)
+
+
+def _board_view(data: dict) -> SimpleNamespace:
+    """Wrap board dict so templates can use attribute access (avoids dict.items clash)."""
+    trip = SimpleNamespace(**data.get("trip", {}))
+    return SimpleNamespace(**{**data, "trip": trip})
+
+
+@app.route("/community")
+def community_board():
+    board = _board_view(store.get_community_needs())
+    return render_template(
+        "community.html",
+        board=board,
+        is_community_page=True,
+    )
+
+
+@app.route("/community/pledge", methods=["GET", "POST"])
+def community_pledge():
+    board_data = store.get_community_needs()
+    board = _board_view(board_data)
+    open_items = [item for item in board_data["items"] if item["remaining_need"] > 0]
+
+    if request.method == "POST":
+        if not board_data.get("published"):
+            flash("The community board is not open for pledges yet.", "error")
+            return redirect(url_for("community_pledge"))
+
+        if _pledge_rate_limited():
+            flash("Please wait a minute before submitting another pledge.", "error")
+            return redirect(url_for("community_pledge"))
+
+        donor_name = request.form.get("donor_name", "").strip()
+        if request.form.get("anonymous") == "on":
+            donor_name = store.ANONYMOUS_DONOR_NAME
+
+        item_id = request.form.get("item_id", "").strip()
+        qty_raw = request.form.get("quantity", "1").strip()
+        note = request.form.get("note", "").strip()
+
+        try:
+            quantity = int(qty_raw)
+        except ValueError:
+            quantity = 0
+
+        try:
+            store.add_donor_pledge(donor_name, item_id, quantity, note)
+        except ValueError as exc:
+            flash(str(exc), "error")
+            return redirect(url_for("community_pledge"))
+
+        session["last_pledge_at"] = datetime.now(timezone.utc).isoformat()
+        flash("Thank you! Your pledge has been recorded.", "success")
+        return redirect(url_for("community_board"))
+
+    return render_template(
+        "community_pledge.html",
+        board=board,
+        open_items=open_items,
+        is_community_page=True,
+    )
 
 
 @app.route("/admin", methods=["GET", "POST"])
@@ -317,6 +399,18 @@ def admin_round_detail(round_id: str):
     return render_template("admin_round.html", round_entry=round_entry)
 
 
+@app.route("/admin/community", methods=["GET"])
+@admin_required
+def admin_community():
+    board = _board_view(store.get_community_needs(include_unpublished=True))
+    pledges = store.get_all_pledges_for_round()
+    return render_template(
+        "admin_community.html",
+        board=board,
+        pledges=pledges,
+    )
+
+
 @app.route("/admin/reset", methods=["POST"])
 @admin_required
 def admin_reset():
@@ -332,6 +426,40 @@ def admin_reset():
             "success",
         )
     return redirect(url_for("admin_dashboard", tab="history"))
+
+
+@app.route("/admin/community/publish", methods=["POST"])
+@admin_required
+def admin_community_publish():
+    published = request.form.get("published", "0") == "1"
+    if published and not store.get_fulfillment().get("items"):
+        flash("Record fulfillment before publishing the community board.", "error")
+        return redirect(url_for("admin_community"))
+
+    store.set_community_published(published)
+    if published:
+        flash("Community board is now public.", "success")
+    else:
+        flash("Community board unpublished.", "success")
+    return redirect(url_for("admin_community"))
+
+
+@app.route("/admin/community/pledge/<pledge_id>", methods=["POST"])
+@admin_required
+def admin_pledge_action(pledge_id: str):
+    action = request.form.get("action", "")
+    status_map = {"received": "received", "cancelled": "cancelled"}
+    status = status_map.get(action)
+    if not status:
+        flash("Invalid action.", "error")
+        return redirect(url_for("admin_community"))
+
+    result = store.update_pledge_status(pledge_id, status)
+    if result is None:
+        flash("Pledge not found.", "error")
+    else:
+        flash(f"Pledge marked as {status}.", "success")
+    return redirect(url_for("admin_community"))
 
 
 if __name__ == "__main__":

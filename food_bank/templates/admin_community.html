@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Community board — Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Community board</h1>
+    <p class="page-subtitle">Preview needs, publish to donors, and moderate pledges.</p>
+  </div>
+  <div class="header-actions">
+    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-sm">Dashboard</a>
+    <a href="{{ url_for('community_board') }}" class="btn btn-sm" target="_blank" rel="noopener">View public board</a>
+    <form method="post" action="{{ url_for('admin_logout') }}" class="inline-form">
+      <button type="submit" class="btn btn-muted">Log out</button>
+    </form>
+  </div>
+</div>
+
+<div class="summary-cards">
+  <div class="summary-card">
+    <span class="summary-label">Fulfillment</span>
+    <span class="summary-value">{{ 'Recorded' if board.has_fulfillment else 'Not yet' }}</span>
+  </div>
+  <div class="summary-card{% if board.published %} summary-card-warn{% endif %}">
+    <span class="summary-label">Published</span>
+    <span class="summary-value">{{ 'Yes' if board.published else 'No' }}</span>
+  </div>
+  <div class="summary-card">
+    <span class="summary-label">Open items</span>
+    <span class="summary-value">{{ board.items | selectattr('remaining_need', 'gt', 0) | list | length }}</span>
+  </div>
+  <div class="summary-card">
+    <span class="summary-label">Active pledges</span>
+    <span class="summary-value">{{ pledges | selectattr('status', 'equalto', 'pledged') | list | length }}</span>
+  </div>
+</div>
+
+<div class="card">
+  <h2 class="card-title">Publish controls</h2>
+  {% if not board.has_fulfillment %}
+    <p class="status-note">Record fulfillment on <a href="{{ url_for('admin_plan') }}">Plan pickup</a> before publishing.</p>
+  {% else %}
+    <p class="meta">Trip: {{ board.trip.trip_name or '—' }}{% if board.trip.pickup_date %} · {{ board.trip.pickup_date }}{% endif %}</p>
+    <div class="form-actions">
+      {% if board.published %}
+        <form method="post" action="{{ url_for('admin_community_publish') }}" class="inline-form">
+          <input type="hidden" name="published" value="0">
+          <button type="submit" class="btn btn-danger">Unpublish board</button>
+        </form>
+      {% else %}
+        <form method="post" action="{{ url_for('admin_community_publish') }}" class="inline-form">
+          <input type="hidden" name="published" value="1">
+          <button type="submit" class="btn btn-primary">Publish to community</button>
+        </form>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+
+{% if board.items %}
+  <div class="card">
+    <h2 class="card-title">Preview — open needs</h2>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Category</th>
+          <th class="num-col">Needed</th>
+          <th class="num-col">Pledged</th>
+          <th class="num-col">Still open</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in board.items %}
+          <tr>
+            <td>{{ item.name }}</td>
+            <td>{{ item.category }}</td>
+            <td class="num-col">{{ item.shortfall }}</td>
+            <td class="num-col">{{ item.pledged }}</td>
+            <td class="num-col"><strong>{{ item.remaining_need }}</strong></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% elif board.has_fulfillment %}
+  <div class="empty-state">
+    <p>No shortages — all demand was covered by the pickup run.</p>
+  </div>
+{% endif %}
+
+<div class="card">
+  <h2 class="card-title">Pledge moderation</h2>
+  {% if pledges %}
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Donor</th>
+          <th>Item</th>
+          <th class="num-col">Qty</th>
+          <th>Status</th>
+          <th>Note</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for pledge in pledges %}
+          <tr>
+            <td>{{ pledge.donor_display_name }}</td>
+            <td>{{ pledge.item_name }}</td>
+            <td class="num-col">{{ pledge.quantity }}</td>
+            <td><span class="badge{% if pledge.status == 'pledged' %} badge-warn{% endif %}">{{ pledge.status }}</span></td>
+            <td>{{ pledge.note or '—' }}</td>
+            <td>
+              {% if pledge.status == 'pledged' %}
+                <form method="post" action="{{ url_for('admin_pledge_action', pledge_id=pledge.id) }}" class="inline-form">
+                  <input type="hidden" name="action" value="received">
+                  <button type="submit" class="btn btn-sm btn-primary">Received</button>
+                </form>
+                <form method="post" action="{{ url_for('admin_pledge_action', pledge_id=pledge.id) }}" class="inline-form">
+                  <input type="hidden" name="action" value="cancelled">
+                  <button type="submit" class="btn btn-sm btn-muted">Cancel</button>
+                </form>
+              {% else %}
+                —
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="meta">No pledges for this round yet.</p>
+  {% endif %}
+</div>
+{% endblock %}
