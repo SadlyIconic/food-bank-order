@@ -1,10 +1,10 @@
 {% extends "community_base.html" %}
 
-{% block community_title %}Needs board{% endblock %}
+{% block community_title %}Today's shortages{% endblock %}
 
 {% block content %}
 <div class="community-hero">
-  <h1 data-i18n="community_needs_title">This trip's remaining needs</h1>
+  <h1 data-i18n="community_needs_title">Today's shortages</h1>
   <p class="community-hero-meta">
     {% if board.trip.trip_name %}
       <span>{{ board.trip.trip_name }}</span>
@@ -14,21 +14,21 @@
     {% endif %}
   </p>
   <p class="page-subtitle" data-i18n="community_needs_subtitle">
-    Help fill what clients requested this trip. No login required.
+    Help your neighborhood food agency fill high-demand items. No login required.
   </p>
 </div>
 
 {% if board.state == 'not_recorded' %}
   <div class="empty-state community-empty">
-    <p data-i18n="community_not_recorded">Capacity has not been set yet. Check back after staff updates the donor board.</p>
+    <p data-i18n="community_not_recorded">Today's shortages haven't been posted yet. Check back soon.</p>
   </div>
 {% elif board.state == 'unpublished' %}
   <div class="empty-state community-empty">
-    <p data-i18n="community_unpublished">The community board is being prepared. Check back soon.</p>
+    <p data-i18n="community_unpublished">The neighborhood board is being prepared. Check back soon.</p>
   </div>
 {% elif board.state == 'all_covered' %}
   <div class="empty-state community-empty community-success">
-    <p data-i18n="community_all_covered">All needs are covered this trip. Thank you!</p>
+    <p data-i18n="community_all_covered">All shortages are covered today. Thank you!</p>
   </div>
 {% else %}
   {% if board.categories %}
@@ -47,7 +47,7 @@
   </div>
 
   <div class="card">
-    <h2 class="card-title" data-i18n="community_open_needs">Open needs</h2>
+    <h2 class="card-title" data-i18n="community_open_needs">Open shortages</h2>
     <div class="community-needs-grid" id="community-needs-grid">
       {% for item in board.items %}
         <article
@@ -65,6 +65,9 @@
           >
           <div class="community-need-body">
             <span class="item-category community-need-category">{{ item.category }}</span>
+            {% if item.category_level == 'critically_low' %}
+              <span class="badge badge-high-demand" data-i18n="community_high_demand">High demand</span>
+            {% endif %}
             <h3 class="community-need-name">{{ item.name }}</h3>
             <div class="community-progress">
               <div class="community-progress-labels">
@@ -90,8 +93,8 @@
 
   {% if board.donors %}
     <div class="card community-thanks">
-      <h2 class="card-title" data-i18n="community_thanks_title">Community thanks</h2>
-      <p data-i18n="community_thanks_body">Donors who pledged this trip:</p>
+      <h2 class="card-title" data-i18n="community_thanks_title">Neighborhood thanks</h2>
+      <p data-i18n="community_thanks_body">Donors who pledged today:</p>
       <ul class="donor-thanks-list">
         {% for name in board.donors %}
           <li>{{ name.split()[0] if name.split() else name }}</li>

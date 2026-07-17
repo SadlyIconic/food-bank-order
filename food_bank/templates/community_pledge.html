@@ -7,15 +7,15 @@
   <div>
     <h1 data-i18n="community_pledge_title">Make a pledge</h1>
     <p class="page-subtitle" data-i18n="community_pledge_subtitle">
-      Commit to bringing items the food bank still needs this trip.
+      Help your neighborhood food agency by pledging items from today's shortage list.
     </p>
   </div>
-  <a href="{{ url_for('community_board') }}" class="btn btn-sm" data-i18n="community_back_board">Back to needs board</a>
+  <a href="{{ url_for('community_board') }}" class="btn btn-sm" data-i18n="community_back_board">Back to shortages board</a>
 </div>
 
 {% if not board.published %}
   <div class="empty-state community-empty">
-    <p data-i18n="community_unpublished">The community board is being prepared. Check back soon.</p>
+    <p data-i18n="community_unpublished">The neighborhood board is being prepared. Check back soon.</p>
   </div>
 {% elif not open_items %}
   <div class="empty-state community-empty community-success">

@@ -1,16 +1,16 @@
 {% extends "base.html" %}
 
-{% block title %}Staff capacity — Admin{% endblock %}
+{% block title %}Daily shortage broadcast — Admin{% endblock %}
 
 {% block content %}
 <div class="page-header">
   <div>
-    <h1>Staff capacity</h1>
-    <p class="page-subtitle">Set daily category and storage levels to control what appears on the donor board.</p>
+    <h1>Daily shortage broadcast</h1>
+    <p class="page-subtitle">Set what shortages to broadcast to neighborhood donors today. No integrations required.</p>
   </div>
   <div class="header-actions">
     <a href="{{ url_for('admin_dashboard') }}" class="btn btn-sm">Dashboard</a>
-    <a href="{{ url_for('admin_community') }}" class="btn btn-sm">Community</a>
+    <a href="{{ url_for('admin_community') }}" class="btn btn-sm">Broadcast</a>
     <form method="post" action="{{ url_for('admin_logout') }}" class="inline-form">
       <button type="submit" class="btn btn-muted">Log out</button>
     </form>
@@ -19,19 +19,19 @@
 
 <form method="post" action="{{ url_for('admin_capacity') }}">
   {% if thresholds.updated_at %}
-    <p class="meta">Last updated: {{ thresholds.updated_at[:10] }} {{ thresholds.updated_at[11:16] }} UTC</p>
+    <p class="meta">Last broadcast set: {{ thresholds.updated_at[:10] }} {{ thresholds.updated_at[11:16] }} UTC</p>
   {% else %}
-    <p class="status-note">Capacity has not been set yet. Save once to enable the community board.</p>
+    <p class="status-note">Today's shortages haven't been set yet. Save once to enable the neighborhood board.</p>
   {% endif %}
 
   <div class="card">
     <h2 class="card-title">Product categories</h2>
-    <p class="meta">Critically low and low categories appear higher on the donor list. High and full are hidden.</p>
+    <p class="meta">Critically low and low categories appear first for donors. High and full are hidden from the broadcast.</p>
     <table class="data-table capacity-table">
       <thead>
         <tr>
           <th>Category</th>
-          <th>Level</th>
+          <th>Shortage level</th>
         </tr>
       </thead>
       <tbody>
@@ -53,12 +53,12 @@
 
   <div class="card">
     <h2 class="card-title">Storage limits</h2>
-    <p class="meta">When storage is full, all items in that type are blocked from the donor board.</p>
+    <p class="meta">When storage is full, all items in that type are blocked from the neighborhood broadcast.</p>
     <table class="data-table capacity-table">
       <thead>
         <tr>
           <th>Storage</th>
-          <th>Level</th>
+          <th>Shortage level</th>
         </tr>
       </thead>
       <tbody>
@@ -79,7 +79,7 @@
   </div>
 
   <div class="form-actions">
-    <button type="submit" class="btn btn-primary">Save capacity</button>
+    <button type="submit" class="btn btn-primary">Save today's shortages</button>
   </div>
 </form>
 {% endblock %}

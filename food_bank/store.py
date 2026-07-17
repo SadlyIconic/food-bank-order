@@ -792,6 +792,7 @@ def get_donor_needs() -> list[dict]:
                 "item_id": item_id,
                 "name": row.get("name", catalog.get("name", item_id)),
                 "category": category,
+                "category_level": cat_level,
                 "storage_type": storage_type,
                 "unit": row.get("unit", catalog.get("unit", "")),
                 "image": f"images/items/{item_id}.svg",
@@ -986,7 +987,7 @@ def add_donor_pledge(
 
     needs = get_community_needs(include_unpublished=True)
     if not needs.get("ready"):
-        raise ValueError("Staff capacity has not been set yet.")
+        raise ValueError("Today's shortages have not been set yet.")
 
     need_row = next((i for i in needs["items"] if i["item_id"] == item_id), None)
     if need_row is None:

@@ -202,7 +202,7 @@ def community_pledge():
 
     if request.method == "POST":
         if not board_data.get("published"):
-            flash("The community board is not open for pledges yet.", "error")
+            flash("The neighborhood shortage board is not open for pledges yet.", "error")
             return redirect(url_for("community_pledge"))
 
         if _pledge_rate_limited():
@@ -318,14 +318,14 @@ def admin_trip_settings():
 @app.route("/admin/inventory", methods=["GET", "POST"])
 @admin_required
 def admin_inventory():
-    flash("Store inventory has been replaced by Staff capacity.", "success")
+    flash("Store inventory has been replaced by Daily shortage broadcast.", "success")
     return redirect(url_for("admin_capacity"))
 
 
 @app.route("/admin/plan", methods=["GET", "POST"])
 @admin_required
 def admin_plan():
-    flash("Plan pickup has been replaced by Staff capacity.", "success")
+    flash("Plan pickup has been replaced by Daily shortage broadcast.", "success")
     return redirect(url_for("admin_capacity"))
 
 
@@ -349,7 +349,7 @@ def admin_capacity():
             if level in store.STAFF_THRESHOLD_LEVELS:
                 new_storage[storage_type] = level
         store.save_staff_thresholds(new_categories, new_storage)
-        flash("Staff capacity saved.", "success")
+        flash("Today's shortages saved.", "success")
         return redirect(url_for("admin_capacity"))
 
     level_options = [
@@ -386,10 +386,18 @@ def admin_round_detail(round_id: str):
 def admin_community():
     board = _board_view(store.get_community_needs(include_unpublished=True))
     pledges = store.get_all_pledges_for_round()
+    thresholds = store.get_staff_thresholds()
+    storage_levels = thresholds.get("storage", {})
+    blocked_storage = [
+        store.STORAGE_TYPE_LABELS[storage_type]
+        for storage_type in store.STORAGE_TYPES
+        if storage_levels.get(storage_type) == "full"
+    ]
     return render_template(
         "admin_community.html",
         board=board,
         pledges=pledges,
+        blocked_storage=blocked_storage,
     )
 
 
@@ -414,14 +422,14 @@ def admin_reset():
 def admin_community_publish():
     published = request.form.get("published", "0") == "1"
     if published and not store.capacity_is_set():
-        flash("Set staff capacity before publishing the community board.", "error")
+        flash("Set today's shortages before broadcasting to neighborhood donors.", "error")
         return redirect(url_for("admin_community"))
 
     store.set_community_published(published)
     if published:
-        flash("Community board is now public.", "success")
+        flash("Shortage board is now live for neighborhood donors.", "success")
     else:
-        flash("Community board unpublished.", "success")
+        flash("Shortage board taken offline.", "success")
     return redirect(url_for("admin_community"))
 
 

@@ -1174,6 +1174,36 @@ body.community-layout .nav-back-shop {
   color: #166534;
 }
 
+.badge-high-demand {
+  background: #fef3c7;
+  color: #92400e;
+  margin-left: 0.375rem;
+  vertical-align: middle;
+}
+
+.badge-storage-blocked {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.storage-blocked-notice {
+  border-left: 4px solid #ef4444;
+}
+
+.storage-blocked-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.community-need-body .badge-high-demand {
+  display: inline-block;
+  margin: 0.25rem 0 0.125rem;
+}
+
 @media (max-width: 600px) {
   .header-inner {
     flex-direction: column;

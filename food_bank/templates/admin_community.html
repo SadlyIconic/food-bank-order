@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}Community board — Admin{% endblock %}
+{% block title %}Broadcast — Admin{% endblock %}
 
 {% block content %}
 <div class="page-header">
   <div>
-    <h1>Community board</h1>
-    <p class="page-subtitle">Preview needs, publish to donors, and moderate pledges.</p>
+    <h1>Broadcast shortages</h1>
+    <p class="page-subtitle">Preview today's shortages, broadcast to neighborhood donors, and moderate pledges.</p>
   </div>
   <div class="header-actions">
     <a href="{{ url_for('admin_dashboard') }}" class="btn btn-sm">Dashboard</a>
@@ -19,11 +19,11 @@
 
 <div class="summary-cards">
   <div class="summary-card">
-    <span class="summary-label">Capacity</span>
-    <span class="summary-value">{{ 'Set' if board.capacity_set else 'Not yet' }}</span>
+    <span class="summary-label">Last broadcast set</span>
+    <span class="summary-value">{{ 'Yes' if board.capacity_set else 'Not yet' }}</span>
   </div>
   <div class="summary-card{% if board.published %} summary-card-warn{% endif %}">
-    <span class="summary-label">Published</span>
+    <span class="summary-label">Live for donors</span>
     <span class="summary-value">{{ 'Yes' if board.published else 'No' }}</span>
   </div>
   <div class="summary-card">
@@ -36,22 +36,33 @@
   </div>
 </div>
 
+{% if blocked_storage %}
+  <div class="card storage-blocked-notice">
+    <h2 class="card-title">Storage not accepting donations</h2>
+    <ul class="storage-blocked-list">
+      {% for label in blocked_storage %}
+        <li><span class="badge badge-storage-blocked">{{ label }} — not accepting donations</span></li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endif %}
+
 <div class="card">
-  <h2 class="card-title">Publish controls</h2>
+  <h2 class="card-title">Broadcast controls</h2>
   {% if not board.capacity_set %}
-    <p class="status-note">Set staff capacity on <a href="{{ url_for('admin_capacity') }}">Staff capacity</a> before publishing.</p>
+    <p class="status-note">Set today's shortages on <a href="{{ url_for('admin_capacity') }}">Daily shortage broadcast</a> before going live.</p>
   {% else %}
     <p class="meta">Trip: {{ board.trip.trip_name or '—' }}{% if board.trip.pickup_date %} · {{ board.trip.pickup_date }}{% endif %}</p>
     <div class="form-actions">
       {% if board.published %}
         <form method="post" action="{{ url_for('admin_community_publish') }}" class="inline-form">
           <input type="hidden" name="published" value="0">
-          <button type="submit" class="btn btn-danger">Unpublish board</button>
+          <button type="submit" class="btn btn-danger">Take board offline</button>
         </form>
       {% else %}
         <form method="post" action="{{ url_for('admin_community_publish') }}" class="inline-form">
           <input type="hidden" name="published" value="1">
-          <button type="submit" class="btn btn-primary">Publish to community</button>
+          <button type="submit" class="btn btn-primary">Broadcast to neighborhood donors</button>
         </form>
       {% endif %}
     </div>
@@ -60,7 +71,7 @@
 
 {% if board.items %}
   <div class="card">
-    <h2 class="card-title">Preview — open needs</h2>
+    <h2 class="card-title">Preview — open shortages</h2>
     <table class="data-table">
       <thead>
         <tr>
@@ -74,7 +85,12 @@
       <tbody>
         {% for item in board.items %}
           <tr>
-            <td>{{ item.name }}</td>
+            <td>
+              {{ item.name }}
+              {% if item.category_level == 'critically_low' %}
+                <span class="badge badge-high-demand">High demand</span>
+              {% endif %}
+            </td>
             <td>{{ item.category }}</td>
             <td class="num-col">{{ item.requested }}</td>
             <td class="num-col">{{ item.pledged }}</td>
@@ -86,7 +102,7 @@
   </div>
 {% elif board.capacity_set %}
   <div class="empty-state">
-    <p>No open donor needs — demand is covered or filtered by capacity settings.</p>
+    <p>No open shortages to broadcast — demand is covered or filtered by today's shortage settings.</p>
   </div>
 {% endif %}
 
