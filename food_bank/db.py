@@ -1,9 +1,12 @@
-"""Database connections: local SQLite for dev, Turso (libsql) for production."""
+"""Database connections: local SQLite for dev, Turso HTTP for production."""
 
 from __future__ import annotations
 
+import json
 import os
 import sqlite3
+import urllib.error
+import urllib.request
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Iterator
@@ -13,14 +16,15 @@ LOCAL_DB_PATH = Path(os.environ.get("DATABASE_PATH", str(BASE_DIR / "data" / "fo
 
 TURSO_DATABASE_URL = os.environ.get("TURSO_DATABASE_URL", "").strip()
 TURSO_AUTH_TOKEN = os.environ.get("TURSO_AUTH_TOKEN", "").strip()
+TURSO_HTTP_URL = os.environ.get("TURSO_HTTP_URL", "").strip()
 
 
 def uses_turso() -> bool:
-    return bool(TURSO_DATABASE_URL and TURSO_AUTH_TOKEN)
+    return bool(TURSO_AUTH_TOKEN and (TURSO_DATABASE_URL or TURSO_HTTP_URL))
 
 
 class RowAdapter:
-    """Dict-like row for Turso/libsql tuple results."""
+    """Dict-like row for tuple results."""
 
     __slots__ = ("_values", "_keys")
 
@@ -35,6 +39,142 @@ class RowAdapter:
 
     def keys(self) -> list[str]:
         return list(self._keys)
+
+
+def _encode_arg(value: Any) -> dict[str, str]:
+    if value is None:
+        return {"type": "null"}
+    if isinstance(value, bool):
+        return {"type": "integer", "value": "1" if value else "0"}
+    if isinstance(value, int):
+        return {"type": "integer", "value": str(value)}
+    if isinstance(value, float):
+        return {"type": "float", "value": str(value)}
+    return {"type": "text", "value": str(value)}
+
+
+def _decode_cell(cell: Any) -> Any:
+    if cell is None:
+        return None
+    if isinstance(cell, dict):
+        if cell.get("type") == "null":
+            return None
+        return cell.get("value")
+    return cell
+
+
+def _turso_pipeline_url() -> str:
+    if TURSO_HTTP_URL:
+        url = TURSO_HTTP_URL.rstrip("/")
+    else:
+        url = TURSO_DATABASE_URL.strip()
+        if url.startswith("libsql://"):
+            url = "https://" + url[len("libsql://") :]
+        elif not url.startswith("http://") and not url.startswith("https://"):
+            url = "https://" + url
+        url = url.rstrip("/")
+    if not url.endswith("/v2/pipeline"):
+        url = url + "/v2/pipeline"
+    return url
+
+
+class _TursoHttpCursor:
+    def __init__(self, cols: list[str], rows: list[tuple[Any, ...]]) -> None:
+        self.description = [(name, None, None, None, None, None, None) for name in cols]
+        self._cols = cols
+        self._rows = rows
+        self._index = 0
+
+    def fetchone(self) -> Any:
+        if self._index >= len(self._rows):
+            return None
+        row = self._rows[self._index]
+        self._index += 1
+        if not self._cols:
+            return row
+        return RowAdapter(row, self._cols)
+
+    def fetchall(self) -> list[Any]:
+        rest = self._rows[self._index :]
+        self._index = len(self._rows)
+        if not self._cols:
+            return list(rest)
+        return [RowAdapter(row, self._cols) for row in rest]
+
+
+class _TursoHttpConnection:
+    """Turso SQL over HTTP — no native libsql (avoids gunicorn worker deadlocks)."""
+
+    def __init__(self, pipeline_url: str, auth_token: str) -> None:
+        self._pipeline_url = pipeline_url
+        self._auth_token = auth_token
+
+    def _pipeline(self, requests: list[dict]) -> list[dict]:
+        payload = json.dumps({"requests": requests}).encode("utf-8")
+        req = urllib.request.Request(
+            self._pipeline_url,
+            data=payload,
+            headers={
+                "Authorization": f"Bearer {self._auth_token}",
+                "Content-Type": "application/json",
+                "User-Agent": "FoodBankOrderApp/1.0",
+            },
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            body = exc.read().decode("utf-8", errors="replace")
+            raise RuntimeError(f"Turso HTTP {exc.code}: {body[:500]}") from exc
+        except urllib.error.URLError as exc:
+            raise RuntimeError(f"Turso connection failed: {exc.reason}") from exc
+
+        results = data.get("results", [])
+        for item in results:
+            if item.get("type") == "error":
+                raise RuntimeError(f"Turso query error: {item.get('error', item)}")
+        return results
+
+    @staticmethod
+    def _parse_execute_result(result_item: dict) -> tuple[list[str], list[tuple[Any, ...]]]:
+        response = result_item.get("response", {})
+        payload = response.get("result", {})
+        cols = [col.get("name", f"col{i}") for i, col in enumerate(payload.get("cols", []))]
+        rows: list[tuple[Any, ...]] = []
+        for raw_row in payload.get("rows", []):
+            if isinstance(raw_row, list):
+                rows.append(tuple(_decode_cell(cell) for cell in raw_row))
+            else:
+                rows.append((raw_row,))
+        return cols, rows
+
+    def execute(self, sql: str, params: tuple[Any, ...] | list[Any] = ()) -> _TursoHttpCursor:
+        stmt: dict[str, Any] = {"sql": sql}
+        if params:
+            stmt["args"] = [_encode_arg(p) for p in params]
+        results = self._pipeline(
+            [
+                {"type": "execute", "stmt": stmt},
+                {"type": "close"},
+            ]
+        )
+        cols, rows = self._parse_execute_result(results[0])
+        return _TursoHttpCursor(cols, rows)
+
+    def executescript(self, sql: str) -> None:
+        statements = [part.strip() for part in sql.split(";") if part.strip()]
+        if not statements:
+            return
+        requests = [{"type": "execute", "stmt": {"sql": stmt}} for stmt in statements]
+        requests.append({"type": "close"})
+        self._pipeline(requests)
+
+    def commit(self) -> None:
+        return None
+
+    def close(self) -> None:
+        return None
 
 
 class _CursorWrapper:
@@ -89,17 +229,9 @@ class _ConnectionWrapper:
 
 @contextmanager
 def get_conn() -> Iterator[_ConnectionWrapper]:
-    """Yield a DB connection (Turso remote when configured, else local SQLite)."""
+    """Yield a DB connection (Turso HTTP when configured, else local SQLite)."""
     if uses_turso():
-        try:
-            import libsql
-        except ImportError as exc:
-            raise RuntimeError(
-                "TURSO_DATABASE_URL and TURSO_AUTH_TOKEN are set but libsql is not installed. "
-                "Add libsql to requirements.txt and redeploy."
-            ) from exc
-
-        raw = libsql.connect(database=TURSO_DATABASE_URL, auth_token=TURSO_AUTH_TOKEN)
+        raw = _TursoHttpConnection(_turso_pipeline_url(), TURSO_AUTH_TOKEN)
         conn = _ConnectionWrapper(raw, sqlite_native=False)
     else:
         LOCAL_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -114,4 +246,4 @@ def get_conn() -> Iterator[_ConnectionWrapper]:
 
 
 def backend_label() -> str:
-    return "turso" if uses_turso() else "sqlite"
+    return "turso-http" if uses_turso() else "sqlite"

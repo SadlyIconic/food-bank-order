@@ -33,6 +33,10 @@ Do **not** attach a persistent disk on the free tier.
 
 Push to GitHub and deploy. On first request the app creates tables automatically (`orders`, `archive_rounds`, `kv_store`).
 
+The app uses **Turso SQL over HTTP** (stdlib only — no native `libsql` package). This avoids gunicorn worker crashes on Render’s free tier.
+
+Optional: set `TURSO_HTTP_URL` instead of `TURSO_DATABASE_URL` if you have the HTTP URL from `turso db show <name> --http-url` (the app appends `/v2/pipeline` automatically).
+
 ## 4. Verify persistence
 
 1. Place a test order on the live site.
