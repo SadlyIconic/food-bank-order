@@ -110,7 +110,7 @@
             <td>{{ pledge.donor_display_name }}</td>
             <td>{{ pledge.item_name }}</td>
             <td class="num-col">{{ pledge.quantity }}</td>
-            <td><span class="badge{% if pledge.status == 'pledged' %} badge-warn{% endif %}">{{ pledge.status }}</span></td>
+            <td><span class="badge{% if pledge.status == 'pledged' %} badge-warn{% elif pledge.status == 'received' %} badge-status-received{% endif %}">{{ pledge.status }}</span></td>
             <td>{{ pledge.note or '—' }}</td>
             <td>
               {% if pledge.status == 'pledged' %}

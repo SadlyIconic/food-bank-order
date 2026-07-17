@@ -67,7 +67,7 @@ For production on Render, set `TURSO_*` variables (see `docs/TURSO_SETUP.md`). F
 1. Visit `/community` after the board is published.
 2. See items still needed (shortfall minus active pledges).
 3. Submit a pledge at `/community/pledge` — name optional (anonymous supported).
-4. Drop off pledged items; admin marks pledges received.
+4. Drop off pledged items; admin marks pledges **Received** — this adds stock, updates fulfillment, and reduces open community need (pledge stays visible as received).
 
 No household names or order details appear on community pages.
 

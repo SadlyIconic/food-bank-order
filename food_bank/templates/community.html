@@ -113,15 +113,23 @@
               <th data-i18n="community_donor">Donor</th>
               <th data-i18n="item_col">Item</th>
               <th class="num-col" data-i18n="qty">Qty</th>
+              <th data-i18n="community_pledge_status">Status</th>
               <th data-i18n="community_note">Note</th>
             </tr>
           </thead>
           <tbody>
             {% for pledge in board.pledges %}
-              <tr data-item-id="{{ pledge.item_id }}">
+              <tr data-item-id="{{ pledge.item_id }}" class="{% if pledge.status == 'received' %}row-received{% endif %}">
                 <td>{{ pledge.donor_display_name }}</td>
                 <td><span class="pledge-item-name">{{ pledge.item_name }}</span></td>
                 <td class="num-col">{{ pledge.quantity }}</td>
+                <td>
+                  {% if pledge.status == 'received' %}
+                    <span class="badge badge-status-received" data-i18n="community_status_received">Received</span>
+                  {% else %}
+                    <span class="badge badge-status-pledged" data-i18n="community_status_pledged">Pledged</span>
+                  {% endif %}
+                </td>
                 <td>{{ pledge.note or '—' }}</td>
               </tr>
             {% endfor %}

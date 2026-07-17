@@ -592,6 +592,85 @@ def lookup_household_status(household_name: str) -> dict | None:
     return None
 
 
+def _add_to_selection_pick(item_id: str, quantity: int) -> None:
+    """Increase planned pick qty for an item (donor delivery counts toward fulfillment)."""
+    quantity = max(0, int(quantity))
+    if quantity <= 0:
+        return
+
+    totals = {r["item_id"]: r for r in aggregate_totals()}
+    requested = int(totals.get(item_id, {}).get("quantity", 0) or 0)
+    selection = get_selection()
+    lines = list(selection.get("lines", []))
+    found = False
+    for line in lines:
+        if line.get("item_id") == item_id:
+            current = int(line.get("pick_qty", 0) or 0)
+            line["pick_qty"] = min(requested, current + quantity) if requested else current + quantity
+            line["weight_lb"] = float(line.get("weight_lb") or item_weight_lb(item_id))
+            found = True
+            break
+    if not found:
+        pick_qty = min(requested, quantity) if requested else quantity
+        lines.append(
+            {
+                "item_id": item_id,
+                "pick_qty": pick_qty,
+                "weight_lb": item_weight_lb(item_id),
+            }
+        )
+    save_selection({"lines": lines, "total_weight_lb": selection.get("total_weight_lb", 0)})
+
+
+def _add_to_store_inventory(item_id: str, quantity: int) -> None:
+    """Increase on-hand store inventory when a donor delivery is recorded."""
+    quantity = max(0, int(quantity))
+    if quantity <= 0:
+        return
+
+    inventory = get_store_inventory()
+    lines = list(inventory.get("lines", []))
+    found = False
+    for line in lines:
+        if line.get("item_id") == item_id:
+            line["available_qty"] = int(line.get("available_qty", 0) or 0) + quantity
+            line["weight_lb"] = float(line.get("weight_lb") or item_weight_lb(item_id))
+            found = True
+            break
+    if not found:
+        lines.append(
+            {
+                "item_id": item_id,
+                "available_qty": quantity,
+                "weight_lb": item_weight_lb(item_id),
+                "expires_at": "",
+            }
+        )
+    save_store_inventory({**inventory, "lines": lines})
+
+
+def _apply_donor_receipt(item_id: str, quantity: int) -> None:
+    """Record a donor delivery: add stock, increase picks, refresh fulfillment."""
+    _add_to_store_inventory(item_id, quantity)
+    _add_to_selection_pick(item_id, quantity)
+    save_fulfillment()
+
+
+def _pledge_row_dict(row) -> dict:
+    catalog = get_item_map().get(row["item_id"], {})
+    return {
+        "id": row["id"],
+        "created_at": row["created_at"],
+        "round_id": row["round_id"],
+        "donor_display_name": row["donor_display_name"],
+        "item_id": row["item_id"],
+        "item_name": catalog.get("name", row["item_id"]),
+        "quantity": row["quantity"],
+        "note": row["note"] or "",
+        "status": row["status"],
+    }
+
+
 def current_round_id() -> str:
     """Snapshot key tying pledges to the active trip."""
     trip = get_trip_settings()
@@ -697,7 +776,7 @@ def get_community_needs(
         )
 
     items.sort(key=lambda r: (r["remaining_need"], r["shortfall"]), reverse=True)
-    pledges = get_pledges_for_round()
+    pledges = get_pledges_for_round(statuses=["pledged", "received"])
     donor_names = sorted(
         {
             p["donor_display_name"]
@@ -729,35 +808,31 @@ def get_community_needs(
     }
 
 
-def get_pledges_for_round(round_id: str | None = None, status: str = "pledged") -> list[dict]:
+def get_pledges_for_round(
+    round_id: str | None = None,
+    status: str = "pledged",
+    *,
+    statuses: list[str] | None = None,
+) -> list[dict]:
     rid = round_id if round_id is not None else current_round_id()
-    item_map = get_item_map()
+    if statuses:
+        placeholders = ",".join("?" * len(statuses))
+        query = f"""SELECT id, created_at, round_id, donor_display_name, item_id,
+                           quantity, note, status
+                    FROM donor_pledges
+                    WHERE round_id = ? AND status IN ({placeholders})
+                    ORDER BY created_at DESC"""
+        params: list = [rid, *statuses]
+    else:
+        query = """SELECT id, created_at, round_id, donor_display_name, item_id,
+                          quantity, note, status
+                   FROM donor_pledges
+                   WHERE round_id = ? AND status = ?
+                   ORDER BY created_at DESC"""
+        params = [rid, status]
     with get_conn() as conn:
-        rows = conn.execute(
-            """SELECT id, created_at, round_id, donor_display_name, item_id,
-                      quantity, note, status
-               FROM donor_pledges
-               WHERE round_id = ? AND status = ?
-               ORDER BY created_at DESC""",
-            (rid, status),
-        ).fetchall()
-    pledges = []
-    for row in rows:
-        catalog = item_map.get(row["item_id"], {})
-        pledges.append(
-            {
-                "id": row["id"],
-                "created_at": row["created_at"],
-                "round_id": row["round_id"],
-                "donor_display_name": row["donor_display_name"],
-                "item_id": row["item_id"],
-                "item_name": catalog.get("name", row["item_id"]),
-                "quantity": row["quantity"],
-                "note": row["note"] or "",
-                "status": row["status"],
-            }
-        )
-    return pledges
+        rows = conn.execute(query, params).fetchall()
+    return [_pledge_row_dict(row) for row in rows]
 
 
 def get_all_pledges_for_round(round_id: str | None = None) -> list[dict]:
@@ -877,17 +952,27 @@ def update_pledge_status(pledge_id: str, status: str) -> dict | None:
         raise ValueError("Invalid pledge status.")
     with get_conn() as conn:
         row = conn.execute(
-            "SELECT id FROM donor_pledges WHERE id = ?", (pledge_id,)
+            """SELECT id, created_at, round_id, donor_display_name, item_id,
+                      quantity, note, status
+               FROM donor_pledges WHERE id = ?""",
+            (pledge_id,),
         ).fetchone()
         if row is None:
             return None
+
+        old_status = row["status"]
+        if status == "received" and old_status == "pledged":
+            _apply_donor_receipt(row["item_id"], row["quantity"])
+
         conn.execute(
             "UPDATE donor_pledges SET status = ? WHERE id = ?",
             (status, pledge_id),
         )
         conn.commit()
-    pledges = get_all_pledges_for_round()
-    return next((p for p in pledges if p["id"] == pledge_id), None)
+
+    updated = _pledge_row_dict(row)
+    updated["status"] = status
+    return updated
 
 
 def set_community_published(published: bool) -> dict:

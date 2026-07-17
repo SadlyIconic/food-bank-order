@@ -457,6 +457,12 @@ def admin_pledge_action(pledge_id: str):
     result = store.update_pledge_status(pledge_id, status)
     if result is None:
         flash("Pledge not found.", "error")
+    elif status == "received":
+        flash(
+            "Donation marked received — inventory and fulfillment updated. "
+            "Community needs board reflects the new totals.",
+            "success",
+        )
     else:
         flash(f"Pledge marked as {status}.", "success")
     return redirect(url_for("admin_community"))
