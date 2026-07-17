@@ -919,6 +919,24 @@ body.community-layout .category-tab.active {
   color: #15803d !important;
 }
 
+.nav-back-shop {
+  font-weight: 600;
+  color: #ecfdf5 !important;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+}
+
+.nav-back-shop:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff !important;
+  text-decoration: none;
+}
+
+body.community-layout .nav-back-shop {
+  color: #ecfdf5 !important;
+}
+
 .site-footer {
   margin-top: 2rem;
   padding: 1rem 0 2rem;
