@@ -20,10 +20,20 @@ import store
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-in-production")
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+)
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "Iconic")
 PLEDGE_COOLDOWN_SECONDS = 60
 
 store.load()
+
+
+@app.before_request
+def _session_expires_when_browser_closes():
+    """Keep auth in a session cookie only — not persisted after the browser closes."""
+    session.permanent = False
 
 
 @app.context_processor
@@ -231,6 +241,8 @@ def admin_login():
     if request.method == "POST":
         password = request.form.get("password", "")
         if password == ADMIN_PASSWORD:
+            session.clear()
+            session.permanent = False
             session["admin_authenticated"] = True
             flash("Welcome, admin.", "success")
             return redirect(url_for("admin_dashboard"))
@@ -241,7 +253,7 @@ def admin_login():
 
 @app.route("/admin/logout", methods=["POST"])
 def admin_logout():
-    session.pop("admin_authenticated", None)
+    session.clear()
     flash("Logged out.", "success")
     return redirect(url_for("shop"))
 

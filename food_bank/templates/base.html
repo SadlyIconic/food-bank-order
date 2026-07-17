@@ -17,6 +17,7 @@
             <a href="{{ url_for('community_board') }}" data-i18n="nav_give_needs">Needs board</a>
             <a href="{{ url_for('community_pledge') }}" data-i18n="nav_give_pledge">Make a pledge</a>
             <a href="{{ url_for('shop') }}" class="nav-back-shop" data-i18n="nav_back_ordering">Back to ordering</a>
+            <a href="{{ url_for('admin_login') }}" data-i18n="nav_admin">Admin</a>
           {% else %}
             <a href="{{ url_for('shop') }}" data-i18n="nav_shop">Shop</a>
             <a href="{{ url_for('cart') }}" class="cart-link">
@@ -51,14 +52,6 @@
 
     {% block content %}{% endblock %}
   </main>
-
-  {% if is_community_page %}
-  <footer class="site-footer">
-    <div class="container footer-inner">
-      <a href="{{ url_for('admin_login') }}" class="footer-admin-link" data-i18n="nav_admin">Admin</a>
-    </div>
-  </footer>
-  {% endif %}
 
   <script src="{{ url_for('static', filename='i18n.js') }}"></script>
   <script src="{{ url_for('static', filename='shop.js') }}"></script>
