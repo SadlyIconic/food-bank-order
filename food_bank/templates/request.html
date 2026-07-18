@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}What do you need? — {{ agency_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 data-i18n="request_title">What do you need this week?</h1>
+  <p class="page-subtitle" data-i18n="request_subtitle">Tap every category you expect to need. No login, no names — one submission per week.</p>
+  <p class="muted week-label"><span data-i18n="request_week">Week</span>: {{ week_key }}</p>
+</div>
+
+{% if already_submitted %}
+<div class="card notice-card">
+  <p data-i18n="request_already_submitted">You already shared your needs for this week. Thank you!</p>
+</div>
+{% else %}
+<form method="post" action="{{ url_for('submit_requests') }}" id="request-form" class="request-form">
+  <div class="category-grid" id="category-grid">
+    {% for category in categories %}
+    <label class="category-tile">
+      <input type="checkbox" name="category_ids" value="{{ category.id }}" class="category-input">
+      <span class="category-tile-inner">
+        <span class="category-name">{{ category.display_name }}</span>
+      </span>
+    </label>
+    {% endfor %}
+  </div>
+  <div class="form-actions sticky-actions">
+    <button type="submit" class="btn btn-primary btn-lg" id="submit-requests" disabled data-i18n="request_submit">
+      Submit my needs
+    </button>
+  </div>
+</form>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='request.js') }}"></script>
+{% endblock %}

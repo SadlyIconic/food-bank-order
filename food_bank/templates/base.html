@@ -3,31 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}Food Bank Order{% endblock %}</title>
+  <title>{% block title %}{{ agency_name | default('Food Bank') }}{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   {% block head %}{% endblock %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
   <header class="site-header {% block header_class %}{% endblock %}">
     <div class="container header-inner">
-      <a href="{% block logo_href %}{{ url_for('shop') }}{% endblock %}" class="logo" data-i18n="{% block logo_i18n %}app_name{% endblock %}">{% block logo_text %}Food Bank Order{% endblock %}</a>
+      <a href="{{ url_for('request_board') }}" class="logo" data-i18n="app_name">{{ agency_name | default('Food Bank') }}</a>
       <nav>
         {% block nav %}
-          {% if is_community_page %}
-            <a href="{{ url_for('community_board') }}" data-i18n="nav_give_needs">Needs board</a>
-            <a href="{{ url_for('community_pledge') }}" data-i18n="nav_give_pledge">Make a pledge</a>
-            <a href="{{ url_for('shop') }}" class="nav-back-shop" data-i18n="nav_back_ordering">Back to ordering</a>
-            <a href="{{ url_for('admin_login') }}" data-i18n="nav_admin">Admin</a>
-          {% else %}
-            <a href="{{ url_for('shop') }}" data-i18n="nav_shop">Shop</a>
-            <a href="{{ url_for('cart') }}" class="cart-link">
-              <span data-i18n="nav_cart">Cart</span> <span id="cart-badge" class="cart-badge" hidden>0</span>
-            </a>
-            <span id="cart-weight-badge" class="cart-weight-badge" hidden>0 / 10 lb</span>
-            <span id="order-weight-limit" hidden>{{ order_weight_limit_lb | default(10) }}</span>
-            <a href="{{ url_for('community_board') }}" class="nav-give-link" data-i18n="nav_give">Give</a>
-            <a href="{{ url_for('admin_login') }}" data-i18n="nav_admin">Admin</a>
-          {% endif %}
+          <a href="{{ url_for('request_board') }}" data-i18n="nav_request">Share needs</a>
+          <a href="{{ url_for('admin_login') }}" data-i18n="nav_admin">Admin</a>
         {% endblock %}
       </nav>
     </div>
@@ -53,8 +40,6 @@
   </main>
 
   <script src="{{ url_for('static', filename='i18n.js') }}"></script>
-  <script src="{{ url_for('static', filename='shop.js') }}"></script>
   {% block scripts %}{% endblock %}
 </body>
 </html>
-

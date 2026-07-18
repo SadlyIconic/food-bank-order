@@ -2,13 +2,14 @@
 
 import json
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from db import get_conn
 
 BASE_DIR = Path(__file__).resolve().parent
 ITEMS_FILE = BASE_DIR / "items.json"
+CATEGORIES_FILE = BASE_DIR / "categories.json"
 
 # Legacy JSON paths (migrated on first init)
 LEGACY_ORDERS_FILE = BASE_DIR / "orders.json"
@@ -50,6 +51,14 @@ DEFAULT_STAFF_THRESHOLDS = {
     "categories": {},
     "storage": {},
 }
+
+DEFAULT_APP_SETTINGS = {
+    "food_bank_id": "default",
+    "agency_display_name": "Food Bank",
+    "rolling_weeks": 4,
+}
+
+DEFAULT_FOOD_BANK_ID = "default"
 
 ITEMS: list[dict] = []
 _items_mtime: float | None = None
@@ -103,6 +112,42 @@ def _init_schema(conn) -> None:
             note TEXT,
             status TEXT NOT NULL DEFAULT 'pledged'
         );
+
+        CREATE TABLE IF NOT EXISTS categories (
+            id TEXT PRIMARY KEY,
+            food_bank_id TEXT NOT NULL DEFAULT 'default',
+            display_name TEXT NOT NULL,
+            donor_friendly_translation TEXT,
+            sort_order INTEGER DEFAULT 0,
+            active INTEGER DEFAULT 1
+        );
+
+        CREATE TABLE IF NOT EXISTS client_requests (
+            id TEXT PRIMARY KEY,
+            client_id TEXT NOT NULL,
+            food_bank_id TEXT NOT NULL DEFAULT 'default',
+            category_id TEXT NOT NULL,
+            requested_at TEXT NOT NULL,
+            visit_week TEXT NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_client_requests_week
+            ON client_requests (food_bank_id, visit_week);
+
+        CREATE INDEX IF NOT EXISTS idx_client_requests_client_week
+            ON client_requests (food_bank_id, visit_week, client_id);
+
+        CREATE TABLE IF NOT EXISTS trend_snapshots (
+            id TEXT PRIMARY KEY,
+            food_bank_id TEXT NOT NULL,
+            week_key TEXT NOT NULL,
+            computed_at TEXT NOT NULL,
+            total_clients INTEGER NOT NULL,
+            metrics_json TEXT NOT NULL
+        );
+
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_trend_snapshots_week
+            ON trend_snapshots (food_bank_id, week_key);
         """
     )
     conn.commit()
@@ -173,12 +218,41 @@ def _migrate_legacy_json(conn) -> None:
     conn.commit()
 
 
+def _seed_planning_categories(conn, food_bank_id: str = DEFAULT_FOOD_BANK_ID) -> None:
+    count = conn.execute(
+        "SELECT COUNT(*) FROM categories WHERE food_bank_id = ?",
+        (food_bank_id,),
+    ).fetchone()[0]
+    if count > 0:
+        return
+
+    seed_rows = _read_json(CATEGORIES_FILE, [])
+    for row in seed_rows:
+        conn.execute(
+            """INSERT INTO categories
+               (id, food_bank_id, display_name, donor_friendly_translation, sort_order, active)
+               VALUES (?, ?, ?, ?, ?, 1)""",
+            (
+                row["id"],
+                food_bank_id,
+                row["display_name"],
+                row.get("donor_friendly_translation", ""),
+                int(row.get("sort_order", 0)),
+            ),
+        )
+    conn.commit()
+
+
 def load() -> None:
     """Initialize database and load catalog."""
     global ITEMS, _items_mtime
     with get_conn() as conn:
         _init_schema(conn)
         _migrate_legacy_json(conn)
+        _seed_planning_categories(conn)
+        if conn.execute("SELECT COUNT(*) FROM kv_store WHERE key = 'app_settings'").fetchone()[0] == 0:
+            _kv_set(conn, "app_settings", DEFAULT_APP_SETTINGS.copy())
+            conn.commit()
     ITEMS = _read_json(ITEMS_FILE, [])
     _items_mtime = ITEMS_FILE.stat().st_mtime if ITEMS_FILE.exists() else None
 
@@ -1182,3 +1256,326 @@ def get_archive_round(round_id: str) -> dict | None:
         if fulfillment_data.get("items") is not None or fulfillment_data.get("households") is not None:
             entry["fulfillment"] = fulfillment_data
     return entry
+
+
+def visit_week_key(dt: datetime | None = None) -> str:
+    if dt is None:
+        dt = datetime.now(timezone.utc)
+    year, week, _ = dt.isocalendar()
+    return f"{year}-W{week:02d}"
+
+
+def _week_key_to_date(week_key: str) -> datetime:
+    year_str, week_str = week_key.split("-W", 1)
+    return datetime.fromisocalendar(int(year_str), int(week_str), 1).replace(tzinfo=timezone.utc)
+
+
+def prior_week_key(week_key: str) -> str:
+    prior = _week_key_to_date(week_key) - timedelta(days=7)
+    return visit_week_key(prior)
+
+
+def rolling_week_keys(week_key: str, count: int) -> list[str]:
+    keys: list[str] = []
+    current = week_key
+    for _ in range(max(0, count)):
+        current = prior_week_key(current)
+        keys.append(current)
+    return keys
+
+
+def get_app_settings() -> dict:
+    with get_conn() as conn:
+        settings = _kv_get(conn, "app_settings", DEFAULT_APP_SETTINGS.copy())
+    for key, value in DEFAULT_APP_SETTINGS.items():
+        settings.setdefault(key, value)
+    settings["rolling_weeks"] = max(1, min(12, int(settings.get("rolling_weeks", 4) or 4)))
+    return settings
+
+
+def save_app_settings(settings: dict) -> dict:
+    current = get_app_settings()
+    if "agency_display_name" in settings:
+        current["agency_display_name"] = str(settings["agency_display_name"]).strip()[:120]
+    if "food_bank_id" in settings:
+        current["food_bank_id"] = str(settings["food_bank_id"]).strip()[:64] or DEFAULT_FOOD_BANK_ID
+    if "rolling_weeks" in settings:
+        try:
+            current["rolling_weeks"] = max(1, min(12, int(settings["rolling_weeks"])))
+        except (TypeError, ValueError):
+            pass
+    with get_conn() as conn:
+        _kv_set(conn, "app_settings", current)
+        conn.commit()
+    return current
+
+
+def get_planning_categories(food_bank_id: str | None = None, *, active_only: bool = True) -> list[dict]:
+    fb_id = food_bank_id or get_app_settings()["food_bank_id"]
+    query = """SELECT id, food_bank_id, display_name, donor_friendly_translation, sort_order, active
+               FROM categories
+               WHERE food_bank_id = ?"""
+    params: list = [fb_id]
+    if active_only:
+        query += " AND active = 1"
+    query += " ORDER BY sort_order, display_name"
+    with get_conn() as conn:
+        rows = conn.execute(query, params).fetchall()
+    return [
+        {
+            "id": row["id"],
+            "food_bank_id": row["food_bank_id"],
+            "display_name": row["display_name"],
+            "donor_friendly_translation": row["donor_friendly_translation"] or "",
+            "sort_order": row["sort_order"],
+            "active": bool(row["active"]),
+        }
+        for row in rows
+    ]
+
+
+def client_submitted_this_week(
+    client_id: str,
+    food_bank_id: str | None = None,
+    week_key: str | None = None,
+) -> bool:
+    fb_id = food_bank_id or get_app_settings()["food_bank_id"]
+    wk = week_key or visit_week_key()
+    with get_conn() as conn:
+        row = conn.execute(
+            """SELECT 1 FROM client_requests
+               WHERE food_bank_id = ? AND visit_week = ? AND client_id = ?
+               LIMIT 1""",
+            (fb_id, wk, client_id),
+        ).fetchone()
+    return row is not None
+
+
+def add_client_requests(
+    client_id: str,
+    category_ids: list[str],
+    food_bank_id: str | None = None,
+    week_key: str | None = None,
+) -> int:
+    fb_id = food_bank_id or get_app_settings()["food_bank_id"]
+    wk = week_key or visit_week_key()
+    if client_submitted_this_week(client_id, fb_id, wk):
+        raise ValueError("You already submitted requests for this week.")
+
+    allowed = {cat["id"] for cat in get_planning_categories(fb_id, active_only=True)}
+    unique_ids = []
+    seen: set[str] = set()
+    for category_id in category_ids:
+        cid = (category_id or "").strip()
+        if not cid or cid not in allowed or cid in seen:
+            continue
+        seen.add(cid)
+        unique_ids.append(cid)
+
+    if not unique_ids:
+        raise ValueError("Select at least one category.")
+
+    now = _utc_now()
+    with get_conn() as conn:
+        for category_id in unique_ids:
+            conn.execute(
+                """INSERT INTO client_requests
+                   (id, client_id, food_bank_id, category_id, requested_at, visit_week)
+                   VALUES (?, ?, ?, ?, ?, ?)""",
+                (str(uuid.uuid4()), client_id, fb_id, category_id, now, wk),
+            )
+        conn.commit()
+    return len(unique_ids)
+
+
+def _category_counts_for_week(food_bank_id: str, week_key: str) -> dict[str, int]:
+    with get_conn() as conn:
+        total_row = conn.execute(
+            """SELECT COUNT(DISTINCT client_id) AS total
+               FROM client_requests
+               WHERE food_bank_id = ? AND visit_week = ?""",
+            (food_bank_id, week_key),
+        ).fetchone()
+        total_clients = int(total_row["total"] or 0)
+        rows = conn.execute(
+            """SELECT category_id, COUNT(DISTINCT client_id) AS client_count
+               FROM client_requests
+               WHERE food_bank_id = ? AND visit_week = ?
+               GROUP BY category_id""",
+            (food_bank_id, week_key),
+        ).fetchall()
+    counts = {row["category_id"]: int(row["client_count"]) for row in rows}
+    return {"total_clients": total_clients, "counts": counts}
+
+
+def _metrics_from_counts(
+    categories: list[dict],
+    total_clients: int,
+    counts: dict[str, int],
+) -> list[dict]:
+    metrics: list[dict] = []
+    for category in categories:
+        client_count = counts.get(category["id"], 0)
+        demand_pct = round(100 * client_count / total_clients, 1) if total_clients else 0.0
+        metrics.append(
+            {
+                "category_id": category["id"],
+                "display_name": category["display_name"],
+                "client_count": client_count,
+                "demand_pct": demand_pct,
+            }
+        )
+    metrics.sort(key=lambda row: row["demand_pct"], reverse=True)
+    return metrics
+
+
+def _snapshot_metrics_map(snapshot: dict | None) -> dict[str, float]:
+    if not snapshot:
+        return {}
+    metrics = snapshot.get("metrics") or json.loads(snapshot.get("metrics_json", "[]"))
+    if isinstance(metrics, dict):
+        return {k: float(v.get("demand_pct", 0)) for k, v in metrics.items()}
+    return {row["category_id"]: float(row.get("demand_pct", 0)) for row in metrics}
+
+
+def get_trend_snapshot(food_bank_id: str, week_key: str) -> dict | None:
+    with get_conn() as conn:
+        row = conn.execute(
+            """SELECT id, food_bank_id, week_key, computed_at, total_clients, metrics_json
+               FROM trend_snapshots
+               WHERE food_bank_id = ? AND week_key = ?""",
+            (food_bank_id, week_key),
+        ).fetchone()
+    if row is None:
+        return None
+    return {
+        "id": row["id"],
+        "food_bank_id": row["food_bank_id"],
+        "week_key": row["week_key"],
+        "computed_at": row["computed_at"],
+        "total_clients": row["total_clients"],
+        "metrics": json.loads(row["metrics_json"]),
+    }
+
+
+def save_trend_snapshot(food_bank_id: str, week_key: str, report: dict) -> dict:
+    snapshot = {
+        "id": str(uuid.uuid4()),
+        "food_bank_id": food_bank_id,
+        "week_key": week_key,
+        "computed_at": report.get("computed_at", _utc_now()),
+        "total_clients": report["total_clients"],
+        "metrics_json": json.dumps(report["categories"]),
+    }
+    with get_conn() as conn:
+        conn.execute(
+            "DELETE FROM trend_snapshots WHERE food_bank_id = ? AND week_key = ?",
+            (food_bank_id, week_key),
+        )
+        conn.execute(
+            """INSERT INTO trend_snapshots
+               (id, food_bank_id, week_key, computed_at, total_clients, metrics_json)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (
+                snapshot["id"],
+                snapshot["food_bank_id"],
+                snapshot["week_key"],
+                snapshot["computed_at"],
+                snapshot["total_clients"],
+                snapshot["metrics_json"],
+            ),
+        )
+        conn.commit()
+    return {
+        **snapshot,
+        "metrics": report["categories"],
+    }
+
+
+def _format_delta(value: float | None) -> str:
+    if value is None:
+        return "—"
+    sign = "+" if value > 0 else ""
+    return f"{sign}{value:.1f}%"
+
+
+def _build_insight(display_name: str, demand_pct: float, vs_prior: float | None, vs_rolling: float | None, rolling_weeks: int) -> str:
+    parts = [f"{display_name}: {demand_pct:.0f}% of clients"]
+    if vs_prior is not None:
+        parts.append(f"({_format_delta(vs_prior)} vs last week)")
+    if vs_rolling is not None:
+        parts.append(f"({_format_delta(vs_rolling)} vs {rolling_weeks}-week avg)")
+    return " ".join(parts)
+
+
+def compute_weekly_trends(
+    food_bank_id: str | None = None,
+    week_key: str | None = None,
+    *,
+    rolling_weeks: int | None = None,
+) -> dict:
+    settings = get_app_settings()
+    fb_id = food_bank_id or settings["food_bank_id"]
+    wk = week_key or visit_week_key()
+    window = rolling_weeks if rolling_weeks is not None else settings["rolling_weeks"]
+
+    categories = get_planning_categories(fb_id, active_only=True)
+    current = _category_counts_for_week(fb_id, wk)
+    prior_wk = prior_week_key(wk)
+    prior_snapshot = get_trend_snapshot(fb_id, prior_wk)
+    if prior_snapshot is None and prior_wk != wk:
+        prior_counts = _category_counts_for_week(fb_id, prior_wk)
+        prior_metrics = _metrics_from_counts(
+            categories,
+            prior_counts["total_clients"],
+            prior_counts["counts"],
+        )
+        prior_map = {row["category_id"]: row["demand_pct"] for row in prior_metrics}
+    else:
+        prior_map = _snapshot_metrics_map(prior_snapshot)
+
+    rolling_keys = rolling_week_keys(wk, window)
+    rolling_maps: list[dict[str, float]] = []
+    for key in rolling_keys:
+        snap = get_trend_snapshot(fb_id, key)
+        if snap:
+            rolling_maps.append(_snapshot_metrics_map(snap))
+        else:
+            hist = _category_counts_for_week(fb_id, key)
+            if hist["total_clients"] > 0:
+                hist_metrics = _metrics_from_counts(categories, hist["total_clients"], hist["counts"])
+                rolling_maps.append({row["category_id"]: row["demand_pct"] for row in hist_metrics})
+
+    base_metrics = _metrics_from_counts(categories, current["total_clients"], current["counts"])
+    enriched: list[dict] = []
+    insights: list[str] = []
+
+    for row in base_metrics:
+        prior_pct = prior_map.get(row["category_id"])
+        vs_prior = round(row["demand_pct"] - prior_pct, 1) if prior_pct is not None else None
+
+        rolling_values = [m.get(row["category_id"]) for m in rolling_maps if row["category_id"] in m]
+        rolling_avg = round(sum(rolling_values) / len(rolling_values), 1) if rolling_values else None
+        vs_rolling = round(row["demand_pct"] - rolling_avg, 1) if rolling_avg is not None else None
+
+        insight = _build_insight(row["display_name"], row["demand_pct"], vs_prior, vs_rolling, window)
+        enriched_row = {
+            **row,
+            "vs_prior_week_pct": vs_prior,
+            "rolling_avg_pct": rolling_avg,
+            "vs_rolling_avg_pct": vs_rolling,
+            "insight": insight,
+        }
+        enriched.append(enriched_row)
+        if row["client_count"] > 0:
+            insights.append(insight)
+
+    return {
+        "food_bank_id": fb_id,
+        "week_key": wk,
+        "computed_at": _utc_now(),
+        "total_clients": current["total_clients"],
+        "rolling_weeks": window,
+        "categories": enriched,
+        "insights": insights[:6],
+    }

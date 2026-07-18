@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Settings — Admin{% endblock %}
+{% block body_class %}admin-page{% endblock %}
+
+{% block nav %}
+  <a href="{{ url_for('admin_trends') }}">Trends</a>
+  <a href="{{ url_for('admin_settings') }}" class="active">Settings</a>
+  <a href="{{ url_for('request_board') }}">Client board</a>
+  <form method="post" action="{{ url_for('admin_logout') }}" class="inline-form">
+    <button type="submit" class="btn btn-muted btn-sm">Log out</button>
+  </form>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Settings</h1>
+  <p class="page-subtitle">Agency identity and trend comparison window.</p>
+</div>
+
+<div class="card">
+  <form method="post" class="settings-form">
+    <div class="form-group">
+      <label for="agency_display_name">Agency display name</label>
+      <input type="text" id="agency_display_name" name="agency_display_name" value="{{ settings.agency_display_name }}">
+    </div>
+    <div class="form-group">
+      <label for="food_bank_id">Food bank ID</label>
+      <input type="text" id="food_bank_id" name="food_bank_id" value="{{ settings.food_bank_id }}">
+      <p class="form-hint">Single agency today (<code>default</code>). Reserved for future multi-site support.</p>
+    </div>
+    <div class="form-group">
+      <label for="rolling_weeks">Rolling average window (weeks)</label>
+      <input type="number" id="rolling_weeks" name="rolling_weeks" min="1" max="12" value="{{ settings.rolling_weeks }}">
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Save settings</button>
+      <a href="{{ url_for('admin_trends') }}" class="btn btn-muted">Back to trends</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

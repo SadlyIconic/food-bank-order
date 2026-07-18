@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Thank you — {{ agency_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 data-i18n="request_success_title">Thank you!</h1>
+  <p class="page-subtitle" data-i18n="request_success_body">Your needs for this week have been recorded anonymously.</p>
+</div>
+
+<div class="card success-card">
+  <p>
+    <span data-i18n="request_success_count">Categories recorded:</span>
+    <strong>{{ count }}</strong>
+  </p>
+  <a href="{{ url_for('request_board') }}" class="btn btn-primary" data-i18n="request_success_back">Back to board</a>
+</div>
+{% endblock %}

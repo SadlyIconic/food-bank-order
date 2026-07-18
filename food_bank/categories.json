@@ -1,0 +1,62 @@
+[
+  {
+    "id": "produce",
+    "display_name": "Produce",
+    "donor_friendly_translation": "Fresh fruits and vegetables",
+    "sort_order": 10
+  },
+  {
+    "id": "protein",
+    "display_name": "Protein",
+    "donor_friendly_translation": "Meat, fish, eggs, and plant protein",
+    "sort_order": 20
+  },
+  {
+    "id": "dairy",
+    "display_name": "Dairy",
+    "donor_friendly_translation": "Milk, cheese, and yogurt",
+    "sort_order": 30
+  },
+  {
+    "id": "grains",
+    "display_name": "Grains & Bread",
+    "donor_friendly_translation": "Rice, pasta, bread, and cereal",
+    "sort_order": 40
+  },
+  {
+    "id": "gluten_free",
+    "display_name": "Gluten-Free Staples",
+    "donor_friendly_translation": "Gluten-free pantry basics",
+    "sort_order": 50
+  },
+  {
+    "id": "canned",
+    "display_name": "Canned & Shelf-Stable",
+    "donor_friendly_translation": "Canned goods and shelf-stable meals",
+    "sort_order": 60
+  },
+  {
+    "id": "baby",
+    "display_name": "Baby & Infant",
+    "donor_friendly_translation": "Formula, baby food, and diapers",
+    "sort_order": 70
+  },
+  {
+    "id": "diapers",
+    "display_name": "Diapers",
+    "donor_friendly_translation": "Diapers and wipes",
+    "sort_order": 80
+  },
+  {
+    "id": "personal_care",
+    "display_name": "Personal Care",
+    "donor_friendly_translation": "Soap, shampoo, and hygiene items",
+    "sort_order": 90
+  },
+  {
+    "id": "snacks",
+    "display_name": "Snacks",
+    "donor_friendly_translation": "Snacks for kids and adults",
+    "sort_order": 100
+  }
+]

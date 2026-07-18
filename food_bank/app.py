@@ -1,13 +1,14 @@
-"""Food bank order app — shop, cart, admin aggregation, and trip planning."""
+"""Food bank demand intelligence — category requests, weekly trends, CSV export."""
 
-import json
+import csv
+import io
 import os
-from datetime import datetime, timezone
+import uuid
 from functools import wraps
-from types import SimpleNamespace
 
 from flask import (
     Flask,
+    Response,
     flash,
     redirect,
     render_template,
@@ -25,38 +26,33 @@ app.config.update(
     SESSION_COOKIE_SAMESITE="Lax",
 )
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "Iconic")
-PLEDGE_COOLDOWN_SECONDS = 60
 
-# Visiting public pages ends the admin login for this browser session.
-PUBLIC_ENDPOINTS = frozenset(
-    {
-        "shop",
-        "cart",
-        "confirm",
-        "submit_order",
-        "community_board",
-        "community_pledge",
-    }
-)
+PUBLIC_ENDPOINTS = frozenset({"request_board", "submit_requests"})
 
 store.load()
 
 
+def _ensure_client_id() -> str:
+    client_id = session.get("client_id")
+    if not client_id:
+        client_id = str(uuid.uuid4())
+        session["client_id"] = client_id
+    return client_id
+
+
 @app.before_request
 def _manage_admin_session():
-    """Session cookie only (no long-lived persistence). Drop admin auth on public pages."""
     session.permanent = False
-    endpoint = request.endpoint
-    if endpoint in PUBLIC_ENDPOINTS:
+    if request.endpoint in PUBLIC_ENDPOINTS:
         session.pop("admin_authenticated", None)
 
 
 @app.context_processor
 def inject_globals():
-    trip = store.get_trip_settings()
+    settings = store.get_app_settings()
     return {
-        "order_weight_limit_lb": trip.get("order_weight_limit_lb", 10),
-        "is_community_page": False,
+        "agency_name": settings.get("agency_display_name", "Food Bank"),
+        "visit_week": store.visit_week_key(),
     }
 
 
@@ -71,173 +67,54 @@ def admin_required(view):
     return wrapped
 
 
-def _pledge_rate_limited() -> bool:
-    last = session.get("last_pledge_at")
-    if not last:
-        return False
-    try:
-        last_dt = datetime.fromisoformat(last.replace("Z", "+00:00"))
-        if last_dt.tzinfo is None:
-            last_dt = last_dt.replace(tzinfo=timezone.utc)
-        elapsed = (datetime.now(timezone.utc) - last_dt).total_seconds()
-        return elapsed < PLEDGE_COOLDOWN_SECONDS
-    except ValueError:
-        return False
-
-
 @app.route("/")
-def shop():
-    items = store.get_items()
-    categories = store.get_categories()
-    trip = store.get_trip_settings()
+def request_board():
+    client_id = _ensure_client_id()
+    settings = store.get_app_settings()
+    week_key = store.visit_week_key()
+    already_submitted = store.client_submitted_this_week(client_id, settings["food_bank_id"], week_key)
+    categories = store.get_planning_categories(settings["food_bank_id"])
     return render_template(
-        "shop.html",
-        items=items,
+        "request.html",
         categories=categories,
-        order_weight_limit_lb=trip.get("order_weight_limit_lb", 10),
+        already_submitted=already_submitted,
+        week_key=week_key,
     )
 
 
+@app.route("/request", methods=["POST"])
+def submit_requests():
+    client_id = _ensure_client_id()
+    settings = store.get_app_settings()
+    category_ids = request.form.getlist("category_ids")
+
+    try:
+        count = store.add_client_requests(client_id, category_ids, settings["food_bank_id"])
+    except ValueError as exc:
+        flash(str(exc), "error")
+        return redirect(url_for("request_board"))
+
+    flash(f"Thank you! {count} categor{'y' if count == 1 else 'ies'} recorded for this week.", "success")
+    return render_template("request_success.html", count=count)
+
+
+@app.route("/shop")
 @app.route("/cart")
-def cart():
-    items = store.get_items()
-    trip = store.get_trip_settings()
-    return render_template(
-        "cart.html",
-        items=items,
-        order_weight_limit_lb=trip.get("order_weight_limit_lb", 10),
-    )
-
-
 @app.route("/confirm")
-def confirm():
-    items = store.get_items()
-    trip = store.get_trip_settings()
-    return render_template(
-        "confirm.html",
-        items=items,
-        order_weight_limit_lb=trip.get("order_weight_limit_lb", 10),
-    )
+def legacy_shop_redirect():
+    return redirect(url_for("request_board"))
 
 
 @app.route("/order", methods=["POST"])
-def submit_order():
-    cart_json = request.form.get("cart_json", "").strip()
-
-    if not cart_json:
-        flash("Your cart is empty. Add items before placing an order.", "error")
-        return redirect(url_for("shop"))
-
-    try:
-        cart_lines = json.loads(cart_json)
-    except json.JSONDecodeError:
-        flash("Invalid cart data. Please try again.", "error")
-        return redirect(url_for("cart"))
-
-    if not isinstance(cart_lines, list) or not cart_lines:
-        flash("Your cart is empty. Add items before placing an order.", "error")
-        return redirect(url_for("shop"))
-
-    item_map = store.get_item_map()
-    lines: list[dict] = []
-    for entry in cart_lines:
-        item_id = entry.get("item_id", "")
-        quantity = entry.get("quantity", 0)
-        try:
-            quantity = int(quantity)
-        except (TypeError, ValueError):
-            continue
-        if not item_id or quantity < 1:
-            continue
-        catalog = item_map.get(item_id)
-        if catalog:
-            lines.append(
-                {
-                    "item_id": item_id,
-                    "name": catalog["name"],
-                    "quantity": quantity,
-                }
-            )
-
-    if not lines:
-        flash("No valid items in your cart. Please add items and try again.", "error")
-        return redirect(url_for("cart"))
-
-    order_weight = store.compute_lines_weight(lines)
-    weight_limit = store.get_order_weight_limit_lb()
-    if order_weight > weight_limit:
-        flash(
-            f"Order weight ({order_weight:.1f} lb) exceeds the "
-            f"{weight_limit:.0f} lb limit. Remove items and try again.",
-            "error",
-        )
-        return redirect(url_for("cart"))
-
-    store.add_order("", lines)
-    flash("Order placed successfully! Thank you.", "success")
-    return render_template("order_success.html")
-
-
-def _board_view(data: dict) -> SimpleNamespace:
-    """Wrap board dict so templates can use attribute access (avoids dict.items clash)."""
-    trip = SimpleNamespace(**data.get("trip", {}))
-    return SimpleNamespace(**{**data, "trip": trip})
+def legacy_order_redirect():
+    return redirect(url_for("request_board"))
 
 
 @app.route("/community")
-def community_board():
-    board = _board_view(store.get_community_needs())
-    return render_template(
-        "community.html",
-        board=board,
-        is_community_page=True,
-    )
-
-
 @app.route("/community/pledge", methods=["GET", "POST"])
-def community_pledge():
-    board_data = store.get_community_needs()
-    board = _board_view(board_data)
-    open_items = [item for item in board_data["items"] if item["remaining_need"] > 0]
-
-    if request.method == "POST":
-        if not board_data.get("published"):
-            flash("The neighborhood shortage board is not open for pledges yet.", "error")
-            return redirect(url_for("community_pledge"))
-
-        if _pledge_rate_limited():
-            flash("Please wait a minute before submitting another pledge.", "error")
-            return redirect(url_for("community_pledge"))
-
-        donor_name = request.form.get("donor_name", "").strip()
-        if request.form.get("anonymous") == "on":
-            donor_name = store.ANONYMOUS_DONOR_NAME
-
-        item_id = request.form.get("item_id", "").strip()
-        qty_raw = request.form.get("quantity", "1").strip()
-        note = request.form.get("note", "").strip()
-
-        try:
-            quantity = int(qty_raw)
-        except ValueError:
-            quantity = 0
-
-        try:
-            store.add_donor_pledge(donor_name, item_id, quantity, note)
-        except ValueError as exc:
-            flash(str(exc), "error")
-            return redirect(url_for("community_pledge"))
-
-        session["last_pledge_at"] = datetime.now(timezone.utc).isoformat()
-        flash("Thank you! Your pledge has been recorded.", "success")
-        return redirect(url_for("community_board"))
-
-    return render_template(
-        "community_pledge.html",
-        board=board,
-        open_items=open_items,
-        is_community_page=True,
-    )
+def legacy_community_redirect():
+    flash("The neighborhood donor board has moved to a future release.", "success")
+    return redirect(url_for("request_board"))
 
 
 @app.route("/admin", methods=["GET", "POST"])
@@ -252,7 +129,7 @@ def admin_login():
         session.permanent = False
         session["admin_authenticated"] = True
         flash("Welcome, admin.", "success")
-        return redirect(url_for("admin_dashboard"))
+        return redirect(url_for("admin_trends"))
     flash("Incorrect password.", "error")
     return render_template("admin_login.html")
 
@@ -261,196 +138,156 @@ def admin_login():
 def admin_logout():
     session.clear()
     flash("Logged out.", "success")
-    return redirect(url_for("shop"))
+    return redirect(url_for("request_board"))
+
+
+@app.route("/admin/trends")
+@admin_required
+def admin_trends():
+    settings = store.get_app_settings()
+    week_key = request.args.get("week", store.visit_week_key()).strip() or store.visit_week_key()
+    report = store.compute_weekly_trends(settings["food_bank_id"], week_key)
+    snapshot = store.get_trend_snapshot(settings["food_bank_id"], week_key)
+    return render_template(
+        "admin_trends.html",
+        report=report,
+        snapshot=snapshot,
+        settings=settings,
+        week_key=week_key,
+    )
+
+
+@app.route("/admin/trends/refresh", methods=["POST"])
+@admin_required
+def admin_trends_refresh():
+    settings = store.get_app_settings()
+    week_key = request.form.get("week_key", store.visit_week_key()).strip() or store.visit_week_key()
+    report = store.compute_weekly_trends(settings["food_bank_id"], week_key)
+    store.save_trend_snapshot(settings["food_bank_id"], week_key, report)
+    flash(f"Trend snapshot saved for {week_key}.", "success")
+    return redirect(url_for("admin_trends", week=week_key))
+
+
+@app.route("/admin/trends/export.csv")
+@admin_required
+def admin_trends_export():
+    settings = store.get_app_settings()
+    week_key = request.args.get("week", store.visit_week_key()).strip() or store.visit_week_key()
+    report = store.compute_weekly_trends(settings["food_bank_id"], week_key)
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(
+        [
+            "week",
+            "category",
+            "clients",
+            "demand_pct",
+            "vs_last_week_pct",
+            f"vs_{report['rolling_weeks']}_week_avg_pct",
+            "insight",
+        ]
+    )
+    for row in report["categories"]:
+        writer.writerow(
+            [
+                week_key,
+                row["display_name"],
+                row["client_count"],
+                row["demand_pct"],
+                row.get("vs_prior_week_pct", ""),
+                row.get("vs_rolling_avg_pct", ""),
+                row.get("insight", ""),
+            ]
+        )
+
+    filename = f"demand-trends-{week_key}.csv"
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@app.route("/admin/settings", methods=["GET", "POST"])
+@admin_required
+def admin_settings():
+    settings = store.get_app_settings()
+    if request.method == "POST":
+        store.save_app_settings(
+            {
+                "agency_display_name": request.form.get("agency_display_name", ""),
+                "food_bank_id": request.form.get("food_bank_id", ""),
+                "rolling_weeks": request.form.get("rolling_weeks", settings["rolling_weeks"]),
+            }
+        )
+        flash("Settings saved.", "success")
+        return redirect(url_for("admin_settings"))
+    return render_template("admin_settings.html", settings=store.get_app_settings())
 
 
 @app.route("/admin/dashboard")
 @admin_required
 def admin_dashboard():
-    tab = request.args.get("tab", "current")
-    sort_mode = request.args.get("sort", "demand")
-    trip = store.get_trip_settings()
-    totals = store.aggregate_totals(sort_mode=sort_mode)
-    demand_weight = store.demand_weight_lb()
-    weight_limit = trip.get("weight_limit_lb", 200)
-    order_count = len(store.get_orders())
-    orders_detail = store.orders_with_weight()
-    archive_rounds = store.get_archive()
-    over_by = max(0, round(demand_weight - weight_limit, 2))
-    return render_template(
-        "admin.html",
-        tab=tab,
-        sort_mode=sort_mode,
-        totals=totals,
-        demand_weight=demand_weight,
-        weight_limit=weight_limit,
-        over_by=over_by,
-        order_count=order_count,
-        orders_detail=orders_detail,
-        trip=trip,
-        archive_rounds=archive_rounds,
-    )
-
-
-@app.route("/admin/trip", methods=["POST"])
-@admin_required
-def admin_trip_settings():
-    try:
-        weight_limit = float(request.form.get("weight_limit_lb", 200))
-        order_weight_limit = float(request.form.get("order_weight_limit_lb", 10))
-    except ValueError:
-        flash("Invalid weight values.", "error")
-        return redirect(url_for("admin_dashboard", tab="current"))
-
-    store.save_trip_settings(
-        {
-            "weight_limit_lb": max(0, weight_limit),
-            "order_weight_limit_lb": max(1, order_weight_limit),
-            "trip_name": request.form.get("trip_name", "").strip(),
-            "pickup_date": request.form.get("pickup_date", "").strip(),
-            "store_name": request.form.get("store_name", "").strip(),
-        }
-    )
-    flash("Trip settings saved.", "success")
-    return redirect(url_for("admin_dashboard", tab="current"))
-
-
-@app.route("/admin/inventory", methods=["GET", "POST"])
-@admin_required
-def admin_inventory():
-    flash("Store inventory has been replaced by Daily shortage broadcast.", "success")
-    return redirect(url_for("admin_capacity"))
-
-
-@app.route("/admin/plan", methods=["GET", "POST"])
-@admin_required
-def admin_plan():
-    flash("Plan pickup has been replaced by Daily shortage broadcast.", "success")
-    return redirect(url_for("admin_capacity"))
+    return redirect(url_for("admin_trends"))
 
 
 @app.route("/admin/capacity", methods=["GET", "POST"])
 @admin_required
 def admin_capacity():
-    categories = store.get_categories()
-    thresholds = store.get_staff_thresholds()
-    cat_levels = thresholds.get("categories", {})
-    storage_levels = thresholds.get("storage", {})
-
-    if request.method == "POST":
-        new_categories = {}
-        for category in categories:
-            level = request.form.get(f"cat_{category}", "ok").strip()
-            if level in store.STAFF_THRESHOLD_LEVELS:
-                new_categories[category] = level
-        new_storage = {}
-        for storage_type in store.STORAGE_TYPES:
-            level = request.form.get(f"storage_{storage_type}", "ok").strip()
-            if level in store.STAFF_THRESHOLD_LEVELS:
-                new_storage[storage_type] = level
-        store.save_staff_thresholds(new_categories, new_storage)
-        flash("Today's shortages saved.", "success")
-        return redirect(url_for("admin_capacity"))
-
-    level_options = [
-        ("critically_low", "Critically low"),
-        ("low", "Low"),
-        ("ok", "OK"),
-        ("high", "High"),
-        ("full", "Full"),
-    ]
-    return render_template(
-        "admin_capacity.html",
-        categories=categories,
-        storage_types=store.STORAGE_TYPES,
-        storage_labels=store.STORAGE_TYPE_LABELS,
-        cat_levels=cat_levels,
-        storage_levels=storage_levels,
-        level_options=level_options,
-        thresholds=thresholds,
-    )
-
-
-@app.route("/admin/round/<round_id>")
-@admin_required
-def admin_round_detail(round_id: str):
-    round_entry = store.get_archive_round(round_id)
-    if round_entry is None:
-        flash("Round not found.", "error")
-        return redirect(url_for("admin_dashboard", tab="history"))
-    return render_template("admin_round.html", round_entry=round_entry)
+    flash("Daily shortage broadcast has been replaced by demand trends.", "success")
+    return redirect(url_for("admin_trends"))
 
 
 @app.route("/admin/community", methods=["GET"])
 @admin_required
 def admin_community():
-    board = _board_view(store.get_community_needs(include_unpublished=True))
-    pledges = store.get_all_pledges_for_round()
-    thresholds = store.get_staff_thresholds()
-    storage_levels = thresholds.get("storage", {})
-    blocked_storage = [
-        store.STORAGE_TYPE_LABELS[storage_type]
-        for storage_type in store.STORAGE_TYPES
-        if storage_levels.get(storage_type) == "full"
-    ]
-    return render_template(
-        "admin_community.html",
-        board=board,
-        pledges=pledges,
-        blocked_storage=blocked_storage,
-    )
+    return redirect(url_for("admin_trends"))
+
+
+@app.route("/admin/inventory", methods=["GET", "POST"])
+@admin_required
+def admin_inventory():
+    return redirect(url_for("admin_trends"))
+
+
+@app.route("/admin/plan", methods=["GET", "POST"])
+@admin_required
+def admin_plan():
+    return redirect(url_for("admin_trends"))
+
+
+@app.route("/admin/trip", methods=["POST"])
+@admin_required
+def admin_trip_settings():
+    return redirect(url_for("admin_settings"))
 
 
 @app.route("/admin/reset", methods=["POST"])
 @admin_required
 def admin_reset():
-    if not store.get_orders():
-        flash("No orders to archive. The current round is already empty.", "error")
-        return redirect(url_for("admin_dashboard", tab="current"))
-
-    round_entry = store.archive_current_round()
-    if round_entry:
-        flash(
-            f"Round archived ({round_entry['order_count']} orders). Shopping list reset.",
-            "success",
-        )
-    return redirect(url_for("admin_dashboard", tab="history"))
+    flash("Round archive is no longer used. Export trends CSV before resetting your planning week.", "error")
+    return redirect(url_for("admin_trends"))
 
 
 @app.route("/admin/community/publish", methods=["POST"])
 @admin_required
 def admin_community_publish():
-    published = request.form.get("published", "0") == "1"
-    if published and not store.capacity_is_set():
-        flash("Set today's shortages before broadcasting to neighborhood donors.", "error")
-        return redirect(url_for("admin_community"))
-
-    store.set_community_published(published)
-    if published:
-        flash("Shortage board is now live for neighborhood donors.", "success")
-    else:
-        flash("Shortage board taken offline.", "success")
-    return redirect(url_for("admin_community"))
+    return redirect(url_for("admin_trends"))
 
 
 @app.route("/admin/community/pledge/<pledge_id>", methods=["POST"])
 @admin_required
 def admin_pledge_action(pledge_id: str):
-    action = request.form.get("action", "")
-    status_map = {"received": "received", "cancelled": "cancelled"}
-    status = status_map.get(action)
-    if not status:
-        flash("Invalid action.", "error")
-        return redirect(url_for("admin_community"))
+    del pledge_id
+    return redirect(url_for("admin_trends"))
 
-    result = store.update_pledge_status(pledge_id, status)
-    if result is None:
-        flash("Pledge not found.", "error")
-    elif status == "received":
-        flash("Donation marked received.", "success")
-    else:
-        flash(f"Pledge marked as {status}.", "success")
-    return redirect(url_for("admin_community"))
+
+@app.route("/admin/round/<round_id>")
+@admin_required
+def admin_round_detail(round_id: str):
+    del round_id
+    return redirect(url_for("admin_trends"))
 
 
 if __name__ == "__main__":
