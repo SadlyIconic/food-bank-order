@@ -60,6 +60,27 @@ DEFAULT_APP_SETTINGS = {
 
 DEFAULT_FOOD_BANK_ID = "default"
 
+# Map planning categories to items.json catalog categories and/or explicit item IDs.
+PLANNING_ITEM_SOURCES: dict[str, dict] = {
+    "produce": {"catalog_categories": ["Produce"]},
+    "protein": {"catalog_categories": ["Protein"], "item_ids": ["frozen-fish"]},
+    "dairy": {"catalog_categories": ["Dairy"]},
+    "grains": {"catalog_categories": ["Grains"]},
+    "gluten_free": {
+        "item_ids": ["rice-white", "rice-brown", "oatmeal", "peanut-butter", "tuna", "lentils-dry"]
+    },
+    "canned": {"catalog_categories": ["Canned Goods"]},
+    "baby": {
+        "item_ids": ["diapers"],
+        "extra_examples": ["Baby formula", "Baby food pouches"],
+    },
+    "diapers": {"item_ids": ["diapers"], "extra_examples": ["Diaper wipes"]},
+    "personal_care": {
+        "item_ids": ["soap-bar", "toothpaste", "toilet-paper", "laundry-detergent"]
+    },
+    "snacks": {"catalog_categories": ["Snacks", "Beverages"]},
+}
+
 ITEMS: list[dict] = []
 _items_mtime: float | None = None
 
@@ -1310,6 +1331,56 @@ def save_app_settings(settings: dict) -> dict:
     return current
 
 
+def _planning_category_seed() -> dict[str, dict]:
+    return {row["id"]: row for row in _read_json(CATEGORIES_FILE, [])}
+
+
+def _example_items_for_planning(planning_id: str, limit: int = 8) -> list[str]:
+    source = PLANNING_ITEM_SOURCES.get(planning_id, {})
+    item_map = get_item_map()
+    names: list[str] = []
+    seen: set[str] = set()
+
+    def add_name(name: str) -> None:
+        cleaned = (name or "").strip()
+        if cleaned and cleaned not in seen:
+            seen.add(cleaned)
+            names.append(cleaned)
+
+    for item_id in source.get("item_ids", []):
+        catalog = item_map.get(item_id)
+        if catalog:
+            add_name(catalog.get("name", item_id))
+
+    for catalog_category in source.get("catalog_categories", []):
+        for item in get_items():
+            if item.get("category") == catalog_category:
+                add_name(item.get("name", item["id"]))
+                if len(names) >= limit:
+                    break
+        if len(names) >= limit:
+            break
+
+    for extra in source.get("extra_examples", []):
+        add_name(extra)
+        if len(names) >= limit:
+            break
+
+    return names[:limit]
+
+
+def _enrich_planning_category(row: dict) -> dict:
+    seed = _planning_category_seed().get(row["id"], {})
+    example_items = seed.get("example_items")
+    if not example_items:
+        example_items = _example_items_for_planning(row["id"])
+    return {
+        **row,
+        "description": seed.get("description", row.get("donor_friendly_translation", "")),
+        "example_items": example_items,
+    }
+
+
 def get_planning_categories(food_bank_id: str | None = None, *, active_only: bool = True) -> list[dict]:
     fb_id = food_bank_id or get_app_settings()["food_bank_id"]
     query = """SELECT id, food_bank_id, display_name, donor_friendly_translation, sort_order, active
@@ -1321,7 +1392,7 @@ def get_planning_categories(food_bank_id: str | None = None, *, active_only: boo
     query += " ORDER BY sort_order, display_name"
     with get_conn() as conn:
         rows = conn.execute(query, params).fetchall()
-    return [
+    categories = [
         {
             "id": row["id"],
             "food_bank_id": row["food_bank_id"],
@@ -1332,6 +1403,7 @@ def get_planning_categories(food_bank_id: str | None = None, *, active_only: boo
         }
         for row in rows
     ]
+    return [_enrich_planning_category(category) for category in categories]
 
 
 def client_submitted_this_week(

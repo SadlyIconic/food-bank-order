@@ -5,7 +5,7 @@
 {% block content %}
 <div class="page-header">
   <h1 data-i18n="request_title">What do you need this week?</h1>
-  <p class="page-subtitle" data-i18n="request_subtitle">Tap every category you expect to need. No login, no names — one submission per week.</p>
+  <p class="page-subtitle" data-i18n="request_subtitle">Tap a category to see what's included, then add the ones you expect to need.</p>
   <p class="muted week-label"><span data-i18n="request_week">Week</span>: {{ week_key }}</p>
 </div>
 
@@ -17,12 +17,25 @@
 <form method="post" action="{{ url_for('submit_requests') }}" id="request-form" class="request-form">
   <div class="category-grid" id="category-grid">
     {% for category in categories %}
-    <label class="category-tile">
-      <input type="checkbox" name="category_ids" value="{{ category.id }}" class="category-input">
-      <span class="category-tile-inner">
+    <div class="category-tile" data-category-id="{{ category.id }}">
+      <input
+        type="checkbox"
+        name="category_ids"
+        value="{{ category.id }}"
+        id="cat-{{ category.id }}"
+        class="category-input"
+      >
+      <button
+        type="button"
+        class="category-tile-inner category-open-btn"
+        data-category-id="{{ category.id }}"
+        aria-describedby="cat-desc-{{ category.id }}"
+      >
+        <span class="category-check" aria-hidden="true">✓</span>
         <span class="category-name">{{ category.display_name }}</span>
-      </span>
-    </label>
+      </button>
+      <span id="cat-desc-{{ category.id }}" class="visually-hidden">{{ category.description }}</span>
+    </div>
     {% endfor %}
   </div>
   <div class="form-actions sticky-actions">
@@ -31,6 +44,27 @@
     </button>
   </div>
 </form>
+
+<script id="category-details-json" type="application/json">{{ categories | tojson }}</script>
+
+<div id="category-modal" class="category-modal" hidden>
+  <div class="category-modal-backdrop" data-close-modal></div>
+  <div class="category-modal-panel" role="dialog" aria-modal="true" aria-labelledby="category-modal-title">
+    <button type="button" class="category-modal-close" data-close-modal aria-label="Close">&times;</button>
+    <h2 id="category-modal-title" class="category-modal-title"></h2>
+    <p id="category-modal-description" class="category-modal-description"></p>
+    <div id="category-modal-items-wrap" class="category-modal-items-wrap">
+      <h3 class="category-modal-items-heading" data-i18n="request_modal_items">Examples we often carry</h3>
+      <ul id="category-modal-items" class="category-modal-items"></ul>
+    </div>
+    <div class="category-modal-actions">
+      <button type="button" class="btn btn-primary" id="category-modal-toggle" data-i18n="request_modal_add">
+        Add to my needs
+      </button>
+      <button type="button" class="btn btn-muted" data-close-modal data-i18n="request_modal_close">Close</button>
+    </div>
+  </div>
+</div>
 {% endif %}
 {% endblock %}
 

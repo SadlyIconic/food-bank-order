@@ -2,60 +2,70 @@
   {
     "id": "produce",
     "display_name": "Produce",
+    "description": "Fresh fruits and vegetables for cooking, salads, and healthy snacks.",
     "donor_friendly_translation": "Fresh fruits and vegetables",
     "sort_order": 10
   },
   {
     "id": "protein",
     "display_name": "Protein",
+    "description": "Meat, poultry, fish, eggs, and plant-based proteins to help fill out meals.",
     "donor_friendly_translation": "Meat, fish, eggs, and plant protein",
     "sort_order": 20
   },
   {
     "id": "dairy",
     "display_name": "Dairy",
+    "description": "Milk, cheese, yogurt, and other refrigerated dairy for everyday meals.",
     "donor_friendly_translation": "Milk, cheese, and yogurt",
     "sort_order": 30
   },
   {
     "id": "grains",
     "display_name": "Grains & Bread",
+    "description": "Rice, pasta, bread, cereal, and other pantry staples that stretch groceries.",
     "donor_friendly_translation": "Rice, pasta, bread, and cereal",
     "sort_order": 40
   },
   {
     "id": "gluten_free",
     "display_name": "Gluten-Free Staples",
+    "description": "Pantry basics without wheat or gluten — for celiac disease or gluten sensitivity.",
     "donor_friendly_translation": "Gluten-free pantry basics",
     "sort_order": 50
   },
   {
     "id": "canned",
     "display_name": "Canned & Shelf-Stable",
+    "description": "Canned beans, soups, tomatoes, and other shelf-stable items that keep well.",
     "donor_friendly_translation": "Canned goods and shelf-stable meals",
     "sort_order": 60
   },
   {
     "id": "baby",
     "display_name": "Baby & Infant",
+    "description": "Formula, baby food, and infant supplies for families with young children.",
     "donor_friendly_translation": "Formula, baby food, and diapers",
     "sort_order": 70
   },
   {
     "id": "diapers",
     "display_name": "Diapers",
+    "description": "Diapers and related infant supplies — a frequent high-need item for families.",
     "donor_friendly_translation": "Diapers and wipes",
     "sort_order": 80
   },
   {
     "id": "personal_care",
     "display_name": "Personal Care",
+    "description": "Soap, toothpaste, toilet paper, and laundry supplies — not food, but essential for households.",
     "donor_friendly_translation": "Soap, shampoo, and hygiene items",
     "sort_order": 90
   },
   {
     "id": "snacks",
     "display_name": "Snacks",
+    "description": "Crackers, granola bars, juice, and other items for kids and quick bites between meals.",
     "donor_friendly_translation": "Snacks for kids and adults",
     "sort_order": 100
   }
