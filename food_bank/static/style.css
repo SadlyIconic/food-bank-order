@@ -33,6 +33,10 @@ main.container {
   padding-top: 1.5rem;
 }
 
+.admin-page .lang-bar-wrap {
+  display: none;
+}
+
 .lang-bar-wrap {
   background: #eff6ff;
   border-bottom: 1px solid #bfdbfe;

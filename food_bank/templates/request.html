@@ -32,9 +32,9 @@
         aria-describedby="cat-desc-{{ category.id }}"
       >
         <span class="category-check" aria-hidden="true">✓</span>
-        <span class="category-name">{{ category.display_name }}</span>
+        <span class="category-name" data-planning-id="{{ category.id }}" data-planning-field="name">{{ category.display_name }}</span>
       </button>
-      <span id="cat-desc-{{ category.id }}" class="visually-hidden">{{ category.description }}</span>
+      <span id="cat-desc-{{ category.id }}" class="visually-hidden" data-planning-id="{{ category.id }}" data-planning-field="description">{{ category.description }}</span>
     </div>
     {% endfor %}
   </div>

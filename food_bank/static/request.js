@@ -2,6 +2,7 @@
   const form = document.getElementById("request-form");
   if (!form) return;
 
+  const i18n = () => window.FoodBankI18n;
   const submitBtn = document.getElementById("submit-requests");
   const inputs = form.querySelectorAll(".category-input");
   const modal = document.getElementById("category-modal");
@@ -26,10 +27,8 @@
   const detailsById = Object.fromEntries(categoryDetails.map((cat) => [cat.id, cat]));
 
   function t(key, fallback) {
-    if (window.FoodBankI18n && typeof window.FoodBankI18n.t === "function") {
-      return window.FoodBankI18n.t(key);
-    }
-    return fallback;
+    const fb = i18n();
+    return fb && typeof fb.t === "function" ? fb.t(key) : fallback;
   }
 
   function updateSubmitState() {
@@ -55,13 +54,17 @@
     modalToggle.classList.toggle("btn-primary", !checked);
   }
 
-  function openModal(categoryId) {
+  function fillModal(categoryId) {
+    const fb = i18n();
     const category = detailsById[categoryId];
     if (!category || !modal) return;
 
-    activeCategoryId = categoryId;
-    modalTitle.textContent = category.display_name || "";
-    modalDescription.textContent = category.description || category.donor_friendly_translation || "";
+    modalTitle.textContent = fb
+      ? fb.planningCategory(categoryId, "name")
+      : category.display_name || "";
+    modalDescription.textContent = fb
+      ? fb.planningCategory(categoryId, "description")
+      : category.description || category.donor_friendly_translation || "";
 
     modalItems.innerHTML = "";
     const items = category.example_items || [];
@@ -69,13 +72,18 @@
       modalItemsWrap.hidden = false;
       items.forEach((item) => {
         const li = document.createElement("li");
-        li.textContent = item;
+        li.textContent = fb ? fb.exampleItemLabel(item) : typeof item === "string" ? item : item.name;
         modalItems.appendChild(li);
       });
     } else {
       modalItemsWrap.hidden = true;
     }
+  }
 
+  function openModal(categoryId) {
+    if (!detailsById[categoryId] || !modal) return;
+    activeCategoryId = categoryId;
+    fillModal(categoryId);
     syncModalToggle();
     modal.hidden = false;
     document.body.classList.add("modal-open");
@@ -125,6 +133,9 @@
   });
 
   document.addEventListener("foodbank:langchange", () => {
+    if (activeCategoryId) {
+      fillModal(activeCategoryId);
+    }
     syncModalToggle();
   });
 

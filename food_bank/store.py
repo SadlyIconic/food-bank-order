@@ -1335,38 +1335,39 @@ def _planning_category_seed() -> dict[str, dict]:
     return {row["id"]: row for row in _read_json(CATEGORIES_FILE, [])}
 
 
-def _example_items_for_planning(planning_id: str, limit: int = 8) -> list[str]:
+def _example_items_for_planning(planning_id: str, limit: int = 8) -> list[dict]:
     source = PLANNING_ITEM_SOURCES.get(planning_id, {})
     item_map = get_item_map()
-    names: list[str] = []
+    items: list[dict] = []
     seen: set[str] = set()
 
-    def add_name(name: str) -> None:
+    def add_item(item_id: str, name: str) -> None:
         cleaned = (name or "").strip()
-        if cleaned and cleaned not in seen:
-            seen.add(cleaned)
-            names.append(cleaned)
+        if not cleaned or cleaned in seen:
+            return
+        seen.add(cleaned)
+        items.append({"id": item_id, "name": cleaned})
 
     for item_id in source.get("item_ids", []):
         catalog = item_map.get(item_id)
         if catalog:
-            add_name(catalog.get("name", item_id))
+            add_item(item_id, catalog.get("name", item_id))
 
     for catalog_category in source.get("catalog_categories", []):
         for item in get_items():
             if item.get("category") == catalog_category:
-                add_name(item.get("name", item["id"]))
-                if len(names) >= limit:
+                add_item(item["id"], item.get("name", item["id"]))
+                if len(items) >= limit:
                     break
-        if len(names) >= limit:
+        if len(items) >= limit:
             break
 
-    for extra in source.get("extra_examples", []):
-        add_name(extra)
-        if len(names) >= limit:
+    for idx, extra in enumerate(source.get("extra_examples", [])):
+        add_item(f"extra:{planning_id}:{idx}", extra)
+        if len(items) >= limit:
             break
 
-    return names[:limit]
+    return items[:limit]
 
 
 def _enrich_planning_category(row: dict) -> dict:

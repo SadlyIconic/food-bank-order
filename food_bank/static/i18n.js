@@ -128,6 +128,20 @@ const FoodBankI18n = (() => {
       nav_give_pledge: "Comprometerse",
       nav_back_ordering: "Volver al pedido",
       nav_admin: "Admin",
+      nav_request: "Compartir necesidades",
+      request_title: "¿Qué necesita esta semana?",
+      request_subtitle: "Toque una categoría para ver qué incluye, luego agregue las que espera necesitar.",
+      request_week: "Semana",
+      request_submit: "Enviar mis necesidades",
+      request_already_submitted: "Ya compartió sus necesidades de esta semana. ¡Gracias!",
+      request_success_title: "¡Gracias!",
+      request_success_body: "Sus necesidades de esta semana se registraron de forma anónima.",
+      request_success_count: "Categorías registradas:",
+      request_success_back: "Volver al tablero",
+      request_modal_items: "Ejemplos que a menudo tenemos",
+      request_modal_add: "Agregar a mis necesidades",
+      request_modal_remove: "Quitar de mis necesidades",
+      request_modal_close: "Cerrar",
       lang_label: "Idioma",
       shop_title: "Tienda",
       shop_subtitle: "Explore artículos y agréguelos al carrito (límite de {limit} lb por pedido).",
@@ -205,6 +219,20 @@ const FoodBankI18n = (() => {
       nav_give_pledge: "承诺捐赠",
       nav_back_ordering: "返回订购",
       nav_admin: "管理",
+      nav_request: "分享需求",
+      request_title: "本周您需要什么？",
+      request_subtitle: "点击类别查看包含内容，然后添加您预计需要的类别。",
+      request_week: "周",
+      request_submit: "提交我的需求",
+      request_already_submitted: "您本周已分享过需求。谢谢！",
+      request_success_title: "谢谢！",
+      request_success_body: "您本周的需求已匿名记录。",
+      request_success_count: "已记录类别：",
+      request_success_back: "返回选择",
+      request_modal_items: "我们常见的物品示例",
+      request_modal_add: "添加到我的需求",
+      request_modal_remove: "从我的需求中移除",
+      request_modal_close: "关闭",
       lang_label: "语言",
       shop_title: "选购",
       shop_subtitle: "浏览物品并加入购物车（每单限重 {limit} 磅）。",
@@ -282,6 +310,20 @@ const FoodBankI18n = (() => {
       nav_give_pledge: "Cam kết",
       nav_back_ordering: "Quay lại đặt hàng",
       nav_admin: "Quản trị",
+      nav_request: "Chia sẻ nhu cầu",
+      request_title: "Tuần này bạn cần gì?",
+      request_subtitle: "Chạm vào một danh mục để xem nội dung, rồi thêm những gì bạn dự kiến cần.",
+      request_week: "Tuần",
+      request_submit: "Gửi nhu cầu của tôi",
+      request_already_submitted: "Bạn đã chia sẻ nhu cầu tuần này. Cảm ơn!",
+      request_success_title: "Cảm ơn!",
+      request_success_body: "Nhu cầu tuần này của bạn đã được ghi nhận ẩn danh.",
+      request_success_count: "Danh mục đã ghi:",
+      request_success_back: "Quay lại bảng",
+      request_modal_items: "Ví dụ hàng chúng tôi thường có",
+      request_modal_add: "Thêm vào nhu cầu của tôi",
+      request_modal_remove: "Xóa khỏi nhu cầu của tôi",
+      request_modal_close: "Đóng",
       lang_label: "Ngôn ngữ",
       shop_title: "Mua sắm",
       shop_subtitle: "Xem sản phẩm và thêm vào giỏ (giới hạn {limit} lb mỗi đơn).",
@@ -359,6 +401,20 @@ const FoodBankI18n = (() => {
       nav_give_pledge: "Mag-pledge",
       nav_back_ordering: "Bumalik sa order",
       nav_admin: "Admin",
+      nav_request: "Ibahagi ang pangangailangan",
+      request_title: "Ano ang kailangan ninyo ngayong linggo?",
+      request_subtitle: "Pindutin ang kategorya para makita ang laman, pagkatapos idagdag ang inaasahan ninyong kailangan.",
+      request_week: "Linggo",
+      request_submit: "Ipadala ang aking pangangailangan",
+      request_already_submitted: "Naibahagi na ninyo ang pangangailangan ngayong linggo. Salamat!",
+      request_success_title: "Salamat!",
+      request_success_body: "Naitala na nang hindi nagpapakilala ang inyong pangangailangan ngayong linggo.",
+      request_success_count: "Mga kategoryang naitala:",
+      request_success_back: "Bumalik sa board",
+      request_modal_items: "Halimbawang madalas naming mayroon",
+      request_modal_add: "Idagdag sa aking pangangailangan",
+      request_modal_remove: "Alisin sa aking pangangailangan",
+      request_modal_close: "Isara",
       lang_label: "Wika",
       shop_title: "Mamili",
       shop_subtitle: "Tingnan ang mga item at idagdag sa cart ({limit} lb limit bawat order).",
@@ -436,6 +492,20 @@ const FoodBankI18n = (() => {
       nav_give_pledge: "Ballanqaad",
       nav_back_ordering: "Ku noqo dalabka",
       nav_admin: "Maamul",
+      nav_request: "Sheeg baahida",
+      request_title: "Maxaad u baahan tahay toddobaadkan?",
+      request_subtitle: "Taabo qaybta si aad u aragto waxa ku jira, ka dibna ku dar waxaad filayso inaad u baahan tahay.",
+      request_week: "Toddobaad",
+      request_submit: "Gudbi baahidayda",
+      request_already_submitted: "Waad hore u wadaagtay baahidaada toddobaadkan. Mahadsanid!",
+      request_success_title: "Mahadsanid!",
+      request_success_body: "Baahidaada toddobaadkan si qarsoodi ah ayaa loo diiwaangeliyey.",
+      request_success_count: "Qaybaha la diiwaangeliyey:",
+      request_success_back: "Ku noqo boodhka",
+      request_modal_items: "Tusaalooyin aan inta badan haysanno",
+      request_modal_add: "Ku dar baahidayda",
+      request_modal_remove: "Ka saar baahidayda",
+      request_modal_close: "Xir",
       lang_label: "Luqadda",
       shop_title: "Iibso",
       shop_subtitle: "Eeg alaabta oo ku dar gaariga (xadka {limit} lb dalab kasta).",
@@ -506,6 +576,114 @@ const FoodBankI18n = (() => {
     },
   };
 
+  const PLANNING = {
+    en: {
+      produce: { name: "Produce", description: "Fresh fruits and vegetables for cooking, salads, and healthy snacks." },
+      protein: { name: "Protein", description: "Meat, poultry, fish, eggs, and plant-based proteins to help fill out meals." },
+      dairy: { name: "Dairy", description: "Milk, cheese, yogurt, and other refrigerated dairy for everyday meals." },
+      grains: { name: "Grains & Bread", description: "Rice, pasta, bread, cereal, and other pantry staples that stretch groceries." },
+      gluten_free: { name: "Gluten-Free Staples", description: "Pantry basics without wheat or gluten — for celiac disease or gluten sensitivity." },
+      canned: { name: "Canned & Shelf-Stable", description: "Canned beans, soups, tomatoes, and other shelf-stable items that keep well." },
+      baby: { name: "Baby & Infant", description: "Formula, baby food, and infant supplies for families with young children." },
+      diapers: { name: "Diapers", description: "Diapers and related infant supplies — a frequent high-need item for families." },
+      personal_care: { name: "Personal Care", description: "Soap, toothpaste, toilet paper, and laundry supplies — essential for households." },
+      snacks: { name: "Snacks", description: "Crackers, granola bars, juice, and other items for kids and quick bites between meals." },
+    },
+    es: {
+      produce: { name: "Productos frescos", description: "Frutas y verduras frescas para cocinar, ensaladas y meriendas saludables." },
+      protein: { name: "Proteína", description: "Carne, pollo, pescado, huevos y proteínas vegetales para completar las comidas." },
+      dairy: { name: "Lácteos", description: "Leche, queso, yogur y otros lácteos refrigerados para el día a día." },
+      grains: { name: "Granos y pan", description: "Arroz, pasta, pan, cereal y otros básicos de despensa." },
+      gluten_free: { name: "Básicos sin gluten", description: "Alimentos de despensa sin trigo ni gluten — para celiaquía o sensibilidad al gluten." },
+      canned: { name: "Enlatados y estables", description: "Frijoles enlatados, sopas, tomates y otros productos que duran en la estantería." },
+      baby: { name: "Bebé e infante", description: "Fórmula, comida para bebé y artículos para familias con niños pequeños." },
+      diapers: { name: "Pañales", description: "Pañales y artículos para bebé — una necesidad frecuente para las familias." },
+      personal_care: { name: "Cuidado personal", description: "Jabón, pasta dental, papel higiénico y detergente — esenciales para el hogar." },
+      snacks: { name: "Snacks", description: "Galletas, barras de granola, jugo y otras cosas para niños y bocadillos rápidos." },
+    },
+    zh: {
+      produce: { name: "农产品", description: "新鲜水果和蔬菜，用于烹饪、沙拉和健康零食。" },
+      protein: { name: "蛋白质", description: "肉、禽、鱼、鸡蛋和植物蛋白，帮助搭配正餐。" },
+      dairy: { name: "乳制品", description: "牛奶、奶酪、酸奶等日常所需的冷藏乳制品。" },
+      grains: { name: "谷物和面包", description: "大米、面条、面包、麦片和其他 pantry 主食。" },
+      gluten_free: { name: "无麸质主食", description: "不含小麦和麸质的 pantry 基础食品，适合乳糜泻或无麸质饮食。" },
+      canned: { name: "罐头和耐储食品", description: "罐头豆、汤、番茄等耐储存食品。" },
+      baby: { name: "婴儿用品", description: "配方奶粉、婴儿食品和有幼儿家庭所需的用品。" },
+      diapers: { name: "尿布", description: "尿布和婴儿相关用品——家庭常见的高需求物品。" },
+      personal_care: { name: "个人护理", description: "肥皂、牙膏、卫生纸和洗衣液——家庭必需品。" },
+      snacks: { name: "零食", description: "饼干、能量棒、果汁等，适合儿童和两餐之间的点心。" },
+    },
+    vi: {
+      produce: { name: "Rau củ quả", description: "Trái cây và rau tươi để nấu ăn, làm salad và ăn vặt lành mạnh." },
+      protein: { name: "Protein", description: "Thịt, gia cần, cá, trứng và đạm thực vật cho bữa ăn đầy đủ." },
+      dairy: { name: "Sữa", description: "Sữa, phô mai, sữa chua và các sản phẩm sữa cần bảo quản lạnh hàng ngày." },
+      grains: { name: "Ngũ cốc & bánh mì", description: "Gạo, mì, bánh mì, ngũ cốc và thực phẩm cơ bản trong tủ." },
+      gluten_free: { name: "Thực phẩm không gluten", description: "Thực phẩm cơ bản không lúa mì/gluten — cho celiac hoặc nhạy gluten." },
+      canned: { name: "Đồ hộp & bền", description: "Đậu hộp, súp, cà chua và thực phẩm bền trên kệ." },
+      baby: { name: "Em bé", description: "Sữa công thức, thức ăn em bé và đồ dùng cho gia đình có con nhỏ." },
+      diapers: { name: "Tã", description: "Tã và đồ dùng em bé — nhu cầu thường gặp của gia đình." },
+      personal_care: { name: "Chăm sóc cá nhân", description: "Xà phòng, kem đánh răng, giấy vệ sinh và nước giặt — thiết yếu cho hộ gia đình." },
+      snacks: { name: "Đồ ăn vặt", description: "Bánh quy, thanh granola, nước ép và đồ ăn nhanh cho trẻ em." },
+    },
+    tl: {
+      produce: { name: "Gulay at prutas", description: "Sariwang prutas at gulay para sa luto, salad, at meryenda." },
+      protein: { name: "Protina", description: "Karne, manok, isda, itlog, at plant-based na protina para sa pagkain." },
+      dairy: { name: "Gatas", description: "Gatas, keso, yogurt, at iba pang dairy na kailangan ng refrigerator." },
+      grains: { name: "Butil at tinapay", description: "Bigas, pasta, tinapay, cereal, at iba pang pantry staples." },
+      gluten_free: { name: "Walang gluten", description: "Pantry basics na walang trigo o gluten — para sa celiac o sensitivity." },
+      canned: { name: "De-lata at matibay", description: "De-lata na beans, sopas, kamatis, at iba pang tumatagal sa shelf." },
+      baby: { name: "Sanggol", description: "Formula, pagkain ng sanggol, at supplies para sa may maliliit na anak." },
+      diapers: { name: "Lampin", description: "Lampin at supplies ng sanggol — madalas na kailangan ng pamilya." },
+      personal_care: { name: "Personal na pangangalaga", description: "Sabon, toothpaste, toilet paper, at detergent — mahalaga sa bahay." },
+      snacks: { name: "Meryenda", description: "Crackers, granola bars, juice, at meryenda para sa mga bata." },
+    },
+    so: {
+      produce: { name: "Khudaarta", description: "Khudaar iyo miraha cusub oo loogu talagalay karinta, saladhka, iyo cunto fudud." },
+      protein: { name: "Borotiin", description: "Hilib, digaag, kalluun, ukun, iyo borotiin dhirta ah oo loogu talagalay cuntada." },
+      dairy: { name: "Caano", description: "Caano, jiis, yogurt, iyo alaab caano oo qaboojiyaha lagu kaydiyo." },
+      grains: { name: "Badar iyo rooti", description: "Bariis, baasto, rooti, hadhuudh, iyo cuntooyinka aasaasiga ah ee bakhaarka." },
+      gluten_free: { name: "Cuntooyin aan gluten lahayn", description: "Cuntooyin bakhaar oo aan lahayn sarreen ama gluten." },
+      canned: { name: "Qasacadaysan", description: "Digir qasac, maraq, yaanyo, iyo cuntooyin dheer u adkaysta." },
+      baby: { name: "Ilmo", description: "Caano budada ah, cuntada ilmaha, iyo alaab loogu talagalay qoysaska leh carruur." },
+      diapers: { name: "Xafaayad", description: "Xafaayad iyo alaab ilmo — baahi badan oo qoysaska u imaan karta." },
+      personal_care: { name: "Daryeel shaqsiyeed", description: "Saabuun, macmacaan ilkaha, warqad musqusha, iyo detergent — muhiim guriga." },
+      snacks: { name: "Cunto fudud", description: "Biskuut, granola bars, casiir, iyo cunto fudud oo loogu talagalay carruurta." },
+    },
+  };
+
+  const EXAMPLE_EXTRAS = {
+    en: {
+      "extra:baby:0": "Baby formula",
+      "extra:baby:1": "Baby food pouches",
+      "extra:diapers:0": "Diaper wipes",
+    },
+    es: {
+      "extra:baby:0": "Fórmula para bebé",
+      "extra:baby:1": "Purés de comida para bebé",
+      "extra:diapers:0": "Toallitas para pañales",
+    },
+    zh: {
+      "extra:baby:0": "婴儿配方奶粉",
+      "extra:baby:1": "婴儿辅食袋",
+      "extra:diapers:0": "湿巾",
+    },
+    vi: {
+      "extra:baby:0": "Sữa công thức cho em bé",
+      "extra:baby:1": "Túi thức ăn em bé",
+      "extra:diapers:0": "Khăn lau tã",
+    },
+    tl: {
+      "extra:baby:0": "Formula ng sanggol",
+      "extra:baby:1": "Pouch ng pagkain ng sanggol",
+      "extra:diapers:0": "Wipes ng lampin",
+    },
+    so: {
+      "extra:baby:0": "Caano budada ilmaha",
+      "extra:baby:1": "Cunto ilmo oo bac ah",
+      "extra:diapers:0": "Maacun xafaayad",
+    },
+  };
+
   const CATEGORIES = {
     en: { Produce: "Produce", Protein: "Protein", Dairy: "Dairy", Grains: "Grains", "Canned Goods": "Canned Goods", Snacks: "Snacks", Beverages: "Beverages", Frozen: "Frozen", Household: "Household" },
     es: { Produce: "Productos frescos", Protein: "Proteína", Dairy: "Lácteos", Grains: "Granos", "Canned Goods": "Enlatados", Snacks: "Snacks", Beverages: "Bebidas", Frozen: "Congelados", Household: "Hogar" },
@@ -571,6 +749,26 @@ const FoodBankI18n = (() => {
     return UNITS[lang]?.[unit] ?? unit;
   }
 
+  function planningCategory(id, field = "name") {
+    const lang = getLang();
+    return PLANNING[lang]?.[id]?.[field] ?? PLANNING.en[id]?.[field] ?? id;
+  }
+
+  function exampleItemLabel(item) {
+    const lang = getLang();
+    if (!item) return "";
+    if (typeof item === "string") return item;
+    const itemId = item.id || "";
+    const fallback = item.name || "";
+    if (itemId.startsWith("extra:")) {
+      return EXAMPLE_EXTRAS[lang]?.[itemId] ?? EXAMPLE_EXTRAS.en?.[itemId] ?? fallback;
+    }
+    if (itemId) {
+      return itemName(itemId, fallback);
+    }
+    return fallback;
+  }
+
   function applyToElements() {
     document.querySelectorAll("[data-i18n]").forEach((el) => {
       const key = el.dataset.i18n;
@@ -584,6 +782,10 @@ const FoodBankI18n = (() => {
     });
     document.querySelectorAll("[data-i18n-aria]").forEach((el) => {
       el.setAttribute("aria-label", t(el.dataset.i18nAria));
+    });
+    document.querySelectorAll("[data-planning-id]").forEach((el) => {
+      const field = el.dataset.planningField || "name";
+      el.textContent = planningCategory(el.dataset.planningId, field);
     });
     document.querySelectorAll(".item-card[data-item-id]").forEach((card) => {
       const id = card.dataset.itemId;
@@ -652,10 +854,14 @@ const FoodBankI18n = (() => {
     itemName,
     categoryName,
     unitName,
+    planningCategory,
+    exampleItemLabel,
     applyPage,
     init,
   };
 })();
+
+window.FoodBankI18n = FoodBankI18n;
 
 document.addEventListener("DOMContentLoaded", () => {
   FoodBankI18n.init();
