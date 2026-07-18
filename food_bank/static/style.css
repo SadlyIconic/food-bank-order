@@ -271,6 +271,19 @@ nav a {
   color: #64748b;
 }
 
+.btn-secondary {
+  background: #ffffff;
+  border-color: #94a3b8;
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.btn-secondary:hover {
+  background: #f1f5f9;
+  border-color: #64748b;
+  color: #0f172a;
+}
+
 .btn-danger {
   background: #ffffff;
   border-color: #fca5a5;
