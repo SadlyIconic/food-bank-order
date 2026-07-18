@@ -57,9 +57,21 @@ def _decode_cell(cell: Any) -> Any:
     if cell is None:
         return None
     if isinstance(cell, dict):
-        if cell.get("type") == "null":
+        cell_type = cell.get("type")
+        if cell_type == "null":
             return None
-        return cell.get("value")
+        value = cell.get("value")
+        if cell_type == "integer":
+            try:
+                return int(value)
+            except (TypeError, ValueError):
+                return 0
+        if cell_type == "float":
+            try:
+                return float(value)
+            except (TypeError, ValueError):
+                return 0.0
+        return value
     return cell
 
 
