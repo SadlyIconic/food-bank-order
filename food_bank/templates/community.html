@@ -102,7 +102,6 @@
               <th data-i18n="community_donor">Donor</th>
               <th data-i18n="community_category_col">Category</th>
               <th data-i18n="community_pledge_status">Status</th>
-              <th data-i18n="community_note">Note</th>
             </tr>
           </thead>
           <tbody>
@@ -117,7 +116,6 @@
                     <span class="badge badge-status-pledged" data-i18n="community_status_pledged">Pledged</span>
                   {% endif %}
                 </td>
-                <td>{{ pledge.note or '—' }}</td>
               </tr>
             {% endfor %}
           </tbody>

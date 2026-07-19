@@ -1019,6 +1019,11 @@ def get_community_needs(
     category_items = get_category_donor_board()
     tab_labels = sorted({row["display_name"] for row in category_items})
     pledges = get_category_pledges_for_round(statuses=["pledged", "received"])
+    if not admin_preview:
+        pledges = [
+            {key: value for key, value in pledge.items() if key != "note"}
+            for pledge in pledges
+        ]
     donor_names = sorted(
         {
             p["donor_display_name"]
