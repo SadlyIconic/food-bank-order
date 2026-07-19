@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "supply_slider.html" import supply_slider %}
 
 {% block title %}Supply levels — Admin{% endblock %}
 {% block body_class %}admin-page{% endblock %}
@@ -12,7 +13,7 @@
 <div class="page-header admin-header">
   <div>
     <h1>Supply levels</h1>
-    <p class="page-subtitle">How full is each area right now? Used with client demand to plan FLL pallets and donor broadcast.</p>
+    <p class="page-subtitle">How full is each area right now? Drag each slider from critically low to full.</p>
   </div>
 </div>
 
@@ -26,55 +27,31 @@
   <div class="card">
     <h2 class="card-title">Planning categories</h2>
     <p class="meta">Critically low and low categories drive FLL recommendations and donor broadcast. High and full are deprioritized.</p>
-    <table class="data-table capacity-table">
-      <thead>
-        <tr>
-          <th>Category</th>
-          <th>Supply level</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for category in categories %}
-          <tr>
-            <td>{{ category.display_name }}</td>
-            <td>
-              <select name="cat_{{ category.id }}" class="capacity-select">
-                {% for value, label in level_options %}
-                  <option value="{{ value }}"{% if cat_levels.get(category.id, 'ok') == value %} selected{% endif %}>{{ label }}</option>
-                {% endfor %}
-              </select>
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="supply-slider-list">
+      {% for category in categories %}
+        <div class="supply-slider-row">
+          <div class="supply-slider-row-label">{{ category.display_name }}</div>
+          <div class="supply-slider-row-control">
+            {{ supply_slider("cat_" ~ category.id, cat_levels.get(category.id, 'ok'), "cat-" ~ category.id, level_options) }}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
   </div>
 
   <div class="card">
     <h2 class="card-title">Storage limits</h2>
     <p class="meta">When storage is full, categories in that type are blocked from the neighborhood broadcast.</p>
-    <table class="data-table capacity-table">
-      <thead>
-        <tr>
-          <th>Storage</th>
-          <th>Level</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for storage_type in storage_types %}
-          <tr>
-            <td>{{ storage_labels[storage_type] }}</td>
-            <td>
-              <select name="storage_{{ storage_type }}" class="capacity-select">
-                {% for value, label in level_options %}
-                  <option value="{{ value }}"{% if storage_levels.get(storage_type, 'ok') == value %} selected{% endif %}>{{ label }}</option>
-                {% endfor %}
-              </select>
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="supply-slider-list">
+      {% for storage_type in storage_types %}
+        <div class="supply-slider-row">
+          <div class="supply-slider-row-label">{{ storage_labels[storage_type] }}</div>
+          <div class="supply-slider-row-control">
+            {{ supply_slider("storage_" ~ storage_type, storage_levels.get(storage_type, 'ok'), "storage-" ~ storage_type, level_options) }}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
   </div>
 
   <div class="form-actions">
@@ -82,4 +59,8 @@
     <a href="{{ url_for('admin_order') }}" class="btn btn-muted">Go to Monday order</a>
   </div>
 </form>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='supply.js') }}"></script>
 {% endblock %}

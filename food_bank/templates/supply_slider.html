@@ -1,0 +1,42 @@
+{% macro supply_slider(field_name, current_value, slider_id, level_options) %}
+{% set ns = namespace(idx=2) %}
+{% for value, label in level_options %}
+  {% if current_value == value %}
+    {% set ns.idx = loop.index0 %}
+  {% endif %}
+{% endfor %}
+<div
+  class="supply-slider"
+  data-supply-slider
+  data-levels='{{ level_options | map(attribute=0) | list | tojson }}'
+  data-labels='{{ level_options | map(attribute=1) | list | tojson }}'
+  data-current-level="{{ current_value }}"
+>
+  <input type="hidden" name="{{ field_name }}" value="{{ current_value }}" data-supply-value>
+  <div class="supply-slider-head">
+    <span class="supply-slider-current" id="{{ slider_id }}-label" data-supply-label>{{ level_options[ns.idx][1] }}</span>
+  </div>
+  <input
+    type="range"
+    id="{{ slider_id }}"
+    class="supply-range"
+    data-supply-range
+    min="0"
+    max="4"
+    step="1"
+    value="{{ ns.idx }}"
+    aria-labelledby="{{ slider_id }}-label"
+    aria-valuemin="0"
+    aria-valuemax="4"
+    aria-valuenow="{{ ns.idx }}"
+  >
+  <div class="supply-slider-ticks" aria-hidden="true">
+    {% for value, label in level_options %}
+      <button type="button" class="supply-tick{% if current_value == value %} active{% endif %}" data-tick-index="{{ loop.index0 }}" data-level="{{ value }}">
+        <span class="supply-tick-dot"></span>
+        <span class="supply-tick-label">{{ label }}</span>
+      </button>
+    {% endfor %}
+  </div>
+</div>
+{% endmacro %}
