@@ -1731,6 +1731,11 @@ def get_fll_pallets() -> dict:
     return _read_json(FLL_PALLETS_FILE, {})
 
 
+def _priority_score(demand_pct: float, supply_urgency: int, vs_rolling_val: float) -> int:
+    raw = demand_pct + (supply_urgency * 15) + max(0.0, vs_rolling_val)
+    return int(round(raw))
+
+
 def compute_order_plan(
     food_bank_id: str | None = None,
     week_key: str | None = None,
@@ -1758,10 +1763,10 @@ def compute_order_plan(
         supply_level = cat_levels.get(cid, "ok")
         supply_urgency = CATEGORY_PRIORITY.get(supply_level, 2)
         skipped = supply_level in ("high", "full") and demand_pct <= high_demand_threshold
-        gap_score = (
-            0.0
+        priority_score = (
+            0
             if skipped
-            else demand_pct + (supply_urgency * 15) + max(0.0, vs_rolling_val)
+            else _priority_score(demand_pct, supply_urgency, vs_rolling_val)
         )
         storage_type = PLANNING_CATEGORY_STORAGE.get(cid, "shelf")
         categories_out.append(
@@ -1774,7 +1779,7 @@ def compute_order_plan(
                 "supply_level": supply_level,
                 "supply_label": STAFF_THRESHOLD_LABELS.get(supply_level, supply_level),
                 "supply_urgency": supply_urgency,
-                "gap_score": round(gap_score, 1),
+                "priority_score": priority_score,
                 "storage_type": storage_type,
                 "storage_level": storage_levels.get(storage_type, "ok"),
                 "skipped": skipped,
@@ -1785,7 +1790,7 @@ def compute_order_plan(
     for pallet_id, pallet in pallets.items():
         mapped = pallet.get("planning_categories", [])
         scores = [
-            c["gap_score"]
+            c["priority_score"]
             for c in categories_out
             if c["category_id"] in mapped and not c["skipped"]
         ]
@@ -1795,16 +1800,16 @@ def compute_order_plan(
                 "display_name": pallet.get("display_name", pallet_id),
                 "storage": pallet.get("storage", "shelf"),
                 "planning_categories": mapped,
-                "score": round(max(scores) if scores else 0.0, 1),
+                "priority_score": max(scores) if scores else 0,
                 "default_pallets": max(1, int(pallet.get("default_pallets", 1) or 1)),
             }
         )
-    pallet_scores.sort(key=lambda row: row["score"], reverse=True)
+    pallet_scores.sort(key=lambda row: row["priority_score"], reverse=True)
 
     fll_recommendations: list[dict] = []
     total_pallets = 0
     for pallet in pallet_scores:
-        if pallet["score"] <= 0 or total_pallets >= max_pallets:
+        if pallet["priority_score"] <= 0 or total_pallets >= max_pallets:
             continue
         suggested = min(pallet["default_pallets"], max_pallets - total_pallets)
         if suggested <= 0:
@@ -1813,7 +1818,7 @@ def compute_order_plan(
         for cat_row in categories_out:
             if cat_row["category_id"] not in pallet["planning_categories"]:
                 continue
-            if cat_row["gap_score"] <= 0:
+            if cat_row["priority_score"] <= 0:
                 continue
             reasons.append(
                 f"{cat_row['display_name']} {cat_row['supply_label'].lower()}; "
@@ -1825,7 +1830,7 @@ def compute_order_plan(
                 "display_name": pallet["display_name"],
                 "action": "increase",
                 "suggested_pallets": suggested,
-                "score": pallet["score"],
+                "priority_score": pallet["priority_score"],
                 "storage": pallet["storage"],
                 "reason": "; ".join(reasons[:2]) or "Priority gap",
             }

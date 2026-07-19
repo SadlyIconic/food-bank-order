@@ -327,7 +327,7 @@ def admin_order_export():
                 "category",
                 week_key,
                 row["display_name"],
-                row["gap_score"],
+                row["priority_score"],
                 f"demand={row['demand_pct']}% supply={row['supply_label']}",
             ]
         )

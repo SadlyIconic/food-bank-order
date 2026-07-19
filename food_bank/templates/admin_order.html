@@ -71,7 +71,7 @@
         <th>Pallet</th>
         <th>Suggested</th>
         <th>Storage</th>
-        <th>Score</th>
+        <th>Priority score</th>
         <th>Reason</th>
       </tr>
     </thead>
@@ -81,7 +81,7 @@
         <td><strong>{{ rec.display_name }}</strong></td>
         <td>{{ rec.suggested_pallets }}</td>
         <td>{{ rec.storage }}</td>
-        <td>{{ rec.score }}</td>
+        <td>{{ rec.priority_score }}</td>
         <td>{{ rec.reason }}</td>
       </tr>
       {% endfor %}
@@ -101,7 +101,7 @@
           <th>Category</th>
           <th>Client demand</th>
           <th>Supply</th>
-          <th>Gap score</th>
+          <th>Priority score</th>
           <th>FLL pallet</th>
         </tr>
       </thead>
@@ -111,7 +111,7 @@
           <td>{{ row.display_name }}</td>
           <td>{{ row.demand_pct }}% ({{ row.client_count }} clients)</td>
           <td>{{ row.supply_label }}</td>
-          <td>{{ row.gap_score }}</td>
+          <td>{{ row.priority_score }}
           <td>{{ row.fll_pallet_name or '—' }}</td>
         </tr>
         {% endfor %}
