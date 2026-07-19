@@ -9,6 +9,11 @@
   <p class="muted week-label"><span data-i18n="request_week">Week</span>: {{ week_key }}</p>
 </div>
 
+<div class="card donor-callout">
+  <p class="donor-callout-text" data-i18n="request_donor_prompt">Want to help? View open category needs and make a donation pledge.</p>
+  <a href="{{ url_for('community_board') }}" class="btn btn-secondary" data-i18n="request_donor_link">Go to donor board</a>
+</div>
+
 {% if already_submitted %}
 <div class="card notice-card">
   <p data-i18n="request_already_submitted">You already shared your needs for this week. Thank you!</p>

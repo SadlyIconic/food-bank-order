@@ -1326,6 +1326,24 @@ body.community-layout .nav-back-shop {
   padding: 1.25rem;
 }
 
+.donor-callout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+}
+
+.donor-callout-text {
+  margin: 0;
+  flex: 1 1 14rem;
+  color: #166534;
+}
+
 .admin-header {
   display: flex;
   flex-wrap: wrap;

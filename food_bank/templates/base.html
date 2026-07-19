@@ -13,7 +13,8 @@
       <a href="{{ url_for('request_board') }}" class="logo" data-i18n="app_name">{{ agency_name | default('Food Bank') }}</a>
       <nav>
         {% block nav %}
-          <a href="{{ url_for('request_board') }}" data-i18n="nav_request">Share needs</a>
+          <a href="{{ url_for('request_board') }}" data-i18n="nav_request"{% if request.endpoint in ('request_board', 'submit_requests') %} class="active"{% endif %}>Share needs</a>
+          <a href="{{ url_for('community_board') }}" data-i18n="nav_give"{% if request.endpoint in ('community_board', 'community_pledge') %} class="active"{% endif %}>Give</a>
           <a href="{{ url_for('admin_login') }}" data-i18n="nav_admin">Admin</a>
         {% endblock %}
       </nav>
