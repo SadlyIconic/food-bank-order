@@ -1786,6 +1786,13 @@ def compute_order_plan(
             }
         )
 
+    categories_out.sort(
+        key=lambda row: (row["priority_score"], row["demand_pct"]),
+        reverse=True,
+    )
+    for index, row in enumerate(categories_out, start=1):
+        row["priority_rank"] = index
+
     pallet_scores: list[dict] = []
     for pallet_id, pallet in pallets.items():
         mapped = pallet.get("planning_categories", [])
@@ -1836,6 +1843,9 @@ def compute_order_plan(
             }
         )
         total_pallets += suggested
+
+    for index, rec in enumerate(fll_recommendations, start=1):
+        rec["priority_rank"] = index
 
     category_to_pallet: dict[str, str] = {}
     for rec in fll_recommendations:

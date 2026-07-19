@@ -68,6 +68,7 @@
   <table class="data-table">
     <thead>
       <tr>
+        <th>Rank</th>
         <th>Pallet</th>
         <th>Suggested</th>
         <th>Storage</th>
@@ -78,6 +79,7 @@
     <tbody>
       {% for rec in plan.fll_recommendations %}
       <tr>
+        <td>#{{ rec.priority_rank }}</td>
         <td><strong>{{ rec.display_name }}</strong></td>
         <td>{{ rec.suggested_pallets }}</td>
         <td>{{ rec.storage }}</td>
@@ -98,6 +100,7 @@
     <table class="data-table">
       <thead>
         <tr>
+          <th>Rank</th>
           <th>Category</th>
           <th>Client demand</th>
           <th>Supply</th>
@@ -108,10 +111,11 @@
       <tbody>
         {% for row in plan.categories %}
         <tr{% if row.skipped %} class="row-muted"{% endif %}>
+          <td>#{{ row.priority_rank }}</td>
           <td>{{ row.display_name }}</td>
           <td>{{ row.demand_pct }}% ({{ row.client_count }} clients)</td>
           <td>{{ row.supply_label }}</td>
-          <td>{{ row.priority_score }}
+          <td>{{ row.priority_score }}</td>
           <td>{{ row.fll_pallet_name or '—' }}</td>
         </tr>
         {% endfor %}
