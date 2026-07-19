@@ -54,16 +54,19 @@
 
   <div class="card">
     <h2 class="card-title" data-i18n="community_open_needs">Open categories</h2>
+    <p class="meta community-priority-hint" data-i18n="community_priority_hint">
+      Categories at the top of the list are the most important to donate this week.
+    </p>
     <div class="community-needs-grid" id="community-needs-grid">
       {% for item in board.category_items %}
         <article
-          class="community-need-card"
+          class="community-need-card{% if item.supply_level == 'critically_low' %} community-need-card-critical{% endif %}"
           data-category-id="{{ item.category_id }}"
           data-category="{{ item.display_name }}"
         >
           <div class="community-need-body">
             {% if item.supply_level == 'critically_low' %}
-              <span class="badge badge-high-demand" data-i18n="community_critically_low">Critically low</span>
+              <span class="badge badge-critical" data-i18n="community_critically_low">Critically low</span>
             {% elif item.supply_level == 'low' %}
               <span class="badge badge-warn" data-i18n="community_low_supply">Low supply</span>
             {% endif %}

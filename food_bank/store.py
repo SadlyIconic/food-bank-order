@@ -1989,7 +1989,7 @@ def get_category_donor_board() -> list[dict]:
                 "pledged": candidate["category_id"] in pledged_ids,
             }
         )
-    board.sort(key=lambda row: row["priority_score"], reverse=True)
+    board.sort(key=lambda row: (row["priority_score"], row["demand_pct"]), reverse=True)
     return board
 
 

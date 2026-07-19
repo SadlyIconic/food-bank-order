@@ -126,6 +126,7 @@ const FoodBankI18n = (() => {
       community_option_label: "{name} — {count} {unit} still open",
       community_critically_low: "Critically low",
       community_low_supply: "Low supply",
+      community_priority_hint: "Categories at the top of the list are the most important to donate this week.",
       community_demand_signal: "Many families requested",
       community_examples: "Examples",
       community_category_col: "Category",
