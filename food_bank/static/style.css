@@ -194,6 +194,31 @@ main.container {
   margin: 0 0 1.25rem;
 }
 
+.community-dropoff-banner,
+.dropoff-instructions {
+  margin-top: 1rem;
+  padding: 0.875rem 1rem;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+}
+
+.community-dropoff-banner p,
+.dropoff-instructions p {
+  margin: 0.35rem 0 0;
+  white-space: pre-wrap;
+}
+
+.settings-form textarea {
+  width: 100%;
+  min-height: 6rem;
+  padding: 0.5rem 0.625rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font: inherit;
+  resize: vertical;
+}
+
 nav {
   display: flex;
   align-items: center;

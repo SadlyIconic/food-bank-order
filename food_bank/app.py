@@ -32,6 +32,7 @@ PUBLIC_ENDPOINTS = frozenset({
     "submit_requests",
     "community_board",
     "community_pledge",
+    "community_pledge_success",
     "about",
 })
 
@@ -142,13 +143,28 @@ def community_pledge():
         except ValueError as exc:
             flash(str(exc), "error")
             return redirect(url_for("community_pledge"))
-        flash(f"Thank you! Pledge recorded for {pledge['category_name']}.", "success")
-        return redirect(url_for("community_board"))
+        session["pledge_thanks_category"] = pledge["category_name"]
+        return redirect(url_for("community_pledge_success"))
 
     return render_template(
         "community_pledge.html",
         board=board,
         open_categories=open_categories,
+    )
+
+
+@app.route("/community/pledge/thanks")
+def community_pledge_success():
+    category_name = session.pop("pledge_thanks_category", None)
+    if not category_name:
+        return redirect(url_for("community_board"))
+    board = store.get_community_needs()
+    settings = store.get_app_settings()
+    return render_template(
+        "community_pledge_success.html",
+        category_name=category_name,
+        board=board,
+        dropoff_instructions=settings.get("donor_dropoff_instructions", ""),
     )
 
 
@@ -248,6 +264,7 @@ def admin_trends_export():
 @admin_required
 def admin_settings():
     settings = store.get_app_settings()
+    trip = store.get_trip_settings()
     if request.method == "POST":
         store.save_app_settings(
             {
@@ -258,11 +275,23 @@ def admin_settings():
                 "high_demand_threshold": request.form.get(
                     "high_demand_threshold", settings["high_demand_threshold"]
                 ),
+                "donor_dropoff_instructions": request.form.get("donor_dropoff_instructions", ""),
+            }
+        )
+        store.save_trip_settings(
+            {
+                "trip_name": request.form.get("trip_name", ""),
+                "pickup_date": request.form.get("pickup_date", ""),
+                "store_name": request.form.get("store_name", ""),
             }
         )
         flash("Settings saved.", "success")
         return redirect(url_for("admin_settings"))
-    return render_template("admin_settings.html", settings=store.get_app_settings())
+    return render_template(
+        "admin_settings.html",
+        settings=store.get_app_settings(),
+        trip=store.get_trip_settings(),
+    )
 
 
 @app.route("/admin/dashboard")
@@ -407,8 +436,20 @@ def admin_trip_settings():
 @app.route("/admin/reset", methods=["POST"])
 @admin_required
 def admin_reset():
-    flash("Round archive is no longer used. Export trends CSV before resetting your planning week.", "error")
-    return redirect(url_for("admin_trends"))
+    settings = store.get_app_settings()
+    result = store.reset_planning_week(settings["food_bank_id"])
+    if result["snapshot_saved"]:
+        flash(
+            f"Planning week reset. Trend snapshot saved for {result['week_key']} "
+            f"({result['total_clients']} clients).",
+            "success",
+        )
+    else:
+        flash(
+            f"Planning week reset for {result['week_key']}. Supply cleared and donor board taken offline.",
+            "success",
+        )
+    return redirect(url_for("admin_settings"))
 
 
 @app.route("/admin/community/publish", methods=["POST"])

@@ -11,11 +11,12 @@
 {% block content %}
 <div class="page-header">
   <h1>Settings</h1>
-  <p class="page-subtitle">Agency identity, trend window, and FLL pallet planning limits.</p>
+  <p class="page-subtitle">Agency identity, distribution info, trend window, and FLL planning limits.</p>
 </div>
 
 <div class="card">
   <form method="post" class="settings-form">
+    <h2 class="card-title">Agency</h2>
     <div class="form-group">
       <label for="agency_display_name">Agency display name</label>
       <input type="text" id="agency_display_name" name="agency_display_name" value="{{ settings.agency_display_name }}">
@@ -25,6 +26,27 @@
       <input type="text" id="food_bank_id" name="food_bank_id" value="{{ settings.food_bank_id }}">
       <p class="form-hint">Single agency today (<code>default</code>). Reserved for future multi-site support.</p>
     </div>
+
+    <h2 class="card-title">Distribution &amp; donors</h2>
+    <div class="form-group">
+      <label for="trip_name">Distribution name</label>
+      <input type="text" id="trip_name" name="trip_name" value="{{ trip.trip_name }}" placeholder="e.g. July pantry day">
+    </div>
+    <div class="form-group">
+      <label for="pickup_date">Pickup / distribution date</label>
+      <input type="text" id="pickup_date" name="pickup_date" value="{{ trip.pickup_date }}" placeholder="e.g. 2026-07-22">
+    </div>
+    <div class="form-group">
+      <label for="store_name">Location label</label>
+      <input type="text" id="store_name" name="store_name" value="{{ trip.store_name }}" placeholder="e.g. Renewal Food Pantry">
+    </div>
+    <div class="form-group">
+      <label for="donor_dropoff_instructions">Donor drop-off instructions</label>
+      <textarea id="donor_dropoff_instructions" name="donor_dropoff_instructions" rows="4" placeholder="Address, hours, where to ring the bell, items not accepted…">{{ settings.donor_dropoff_instructions }}</textarea>
+      <p class="form-hint">Shown on the public donor board and pledge confirmation.</p>
+    </div>
+
+    <h2 class="card-title">Planning</h2>
     <div class="form-group">
       <label for="rolling_weeks">Rolling average window (weeks)</label>
       <input type="number" id="rolling_weeks" name="rolling_weeks" min="1" max="12" value="{{ settings.rolling_weeks }}">
@@ -43,6 +65,14 @@
       <button type="submit" class="btn btn-primary">Save settings</button>
       <a href="{{ url_for('admin_trends') }}" class="btn btn-muted">Back to trends</a>
     </div>
+  </form>
+</div>
+
+<div class="card">
+  <h2 class="card-title">Start new planning week</h2>
+  <p class="meta">Saves a trend snapshot for {{ visit_week }}, clears this week's client taps, resets supply levels, takes the donor board offline, and marks open pledges received.</p>
+  <form method="post" action="{{ url_for('admin_reset') }}" class="reset-form" onsubmit="return confirm('Start a new planning week? Client taps for {{ visit_week }} will be cleared.');">
+    <button type="submit" class="btn btn-danger">Reset planning week</button>
   </form>
 </div>
 {% endblock %}

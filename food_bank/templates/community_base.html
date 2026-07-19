@@ -10,6 +10,6 @@
 
 {% block nav %}
   <a href="{{ url_for('request_board') }}" data-i18n="nav_request">Share needs</a>
-  <a href="{{ url_for('community_board') }}" data-i18n="nav_give"{% if request.endpoint == 'community_board' %} class="active"{% endif %}>Give</a>
+  <a href="{{ url_for('community_board') }}" data-i18n="nav_give"{% if request.endpoint in ('community_board', 'community_pledge_success') %} class="active"{% endif %}>Donate</a>
   <a href="{{ url_for('community_pledge') }}" data-i18n="nav_give_pledge"{% if request.endpoint == 'community_pledge' %} class="active"{% endif %}>Make a pledge</a>
 {% endblock %}

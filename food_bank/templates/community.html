@@ -16,6 +16,12 @@
   <p class="page-subtitle" data-i18n="community_needs_subtitle">
     Help your neighborhood food agency fill low-supply categories. No login required.
   </p>
+  {% if board.dropoff_instructions %}
+    <div class="community-dropoff-banner">
+      <strong data-i18n="community_dropoff_title">Drop-off instructions</strong>
+      <p>{{ board.dropoff_instructions }}</p>
+    </div>
+  {% endif %}
 </div>
 
 {% if board.state == 'not_recorded' %}

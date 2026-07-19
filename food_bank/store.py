@@ -59,6 +59,7 @@ DEFAULT_APP_SETTINGS = {
     "rolling_weeks": 4,
     "max_fll_pallets": 7,
     "high_demand_threshold": 50,
+    "donor_dropoff_instructions": "",
 }
 
 DEFAULT_FOOD_BANK_ID = "default"
@@ -1037,6 +1038,7 @@ def get_community_needs(
     else:
         state = "open"
 
+    app_settings = get_app_settings()
     return {
         "published": published,
         "ready": True,
@@ -1048,6 +1050,7 @@ def get_community_needs(
         "categories": tab_labels,
         "donors": donor_names,
         "trip": trip_context,
+        "dropoff_instructions": app_settings.get("donor_dropoff_instructions", ""),
         "capacity_updated_at": thresholds.get("updated_at", ""),
         "state": state,
         "round_id": current_round_id(),
@@ -1219,6 +1222,40 @@ def update_pledge_status(pledge_id: str, status: str) -> dict | None:
 
 def set_community_published(published: bool) -> dict:
     return save_trip_settings({"community_published": bool(published)})
+
+
+def reset_planning_week(food_bank_id: str | None = None) -> dict:
+    """Snapshot current-week trends, then clear client taps, supply, and donor board."""
+    settings = get_app_settings()
+    fb_id = food_bank_id or settings["food_bank_id"]
+    week_key = visit_week_key()
+    report = compute_weekly_trends(fb_id, week_key)
+    snapshot_saved = False
+    if report["total_clients"] > 0:
+        save_trend_snapshot(fb_id, week_key, report)
+        snapshot_saved = True
+
+    round_id = current_round_id()
+    with get_conn() as conn:
+        conn.execute(
+            "DELETE FROM client_requests WHERE food_bank_id = ? AND visit_week = ?",
+            (fb_id, week_key),
+        )
+        conn.execute(
+            "UPDATE category_pledges SET status = 'received' WHERE round_id = ? AND status = 'pledged'",
+            (round_id,),
+        )
+        _kv_set(conn, "staff_thresholds", DEFAULT_STAFF_THRESHOLDS.copy())
+        trip = _kv_get(conn, "trip", DEFAULT_TRIP.copy())
+        trip["community_published"] = False
+        _kv_set(conn, "trip", trip)
+        conn.commit()
+
+    return {
+        "week_key": week_key,
+        "snapshot_saved": snapshot_saved,
+        "total_clients": report["total_clients"],
+    }
 
 
 def archive_current_round() -> dict | None:
@@ -1403,6 +1440,8 @@ def save_app_settings(settings: dict) -> dict:
             current["high_demand_threshold"] = max(20, min(90, int(settings["high_demand_threshold"])))
         except (TypeError, ValueError):
             pass
+    if "donor_dropoff_instructions" in settings:
+        current["donor_dropoff_instructions"] = str(settings["donor_dropoff_instructions"]).strip()[:2000]
     with get_conn() as conn:
         _kv_set(conn, "app_settings", current)
         conn.commit()

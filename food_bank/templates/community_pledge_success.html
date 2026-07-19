@@ -1,0 +1,36 @@
+{% extends "community_base.html" %}
+
+{% block community_title %}Thank you{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 data-i18n="community_pledge_success_title">Thank you for pledging!</h1>
+  <p class="page-subtitle" data-i18n="community_pledge_success_body">
+    Your donation pledge was recorded. Here is how to drop off.
+  </p>
+</div>
+
+<div class="card success-card">
+  <p>
+    <span data-i18n="community_category_col">Category</span>:
+    <strong>{{ category_name }}</strong>
+  </p>
+  {% if board.trip.pickup_date or board.trip.trip_name %}
+    <p class="meta">
+      {% if board.trip.trip_name %}{{ board.trip.trip_name }}{% endif %}
+      {% if board.trip.pickup_date %}
+        · <span data-i18n="community_pickup">Pickup</span>: {{ board.trip.pickup_date }}
+      {% endif %}
+    </p>
+  {% endif %}
+  {% if dropoff_instructions %}
+    <div class="dropoff-instructions">
+      <h2 class="card-title" data-i18n="community_dropoff_title">Drop-off instructions</h2>
+      <p>{{ dropoff_instructions }}</p>
+    </div>
+  {% endif %}
+  <div class="form-actions">
+    <a href="{{ url_for('community_board') }}" class="btn btn-primary" data-i18n="community_back_board">Back to needs board</a>
+  </div>
+</div>
+{% endblock %}
