@@ -2,14 +2,17 @@
 
 > Predict next week's supply from anonymous client category requests — staff adjust their Food Lifeline order manually. Zero integrations, zero LLM, pure SQL on SQLite or Turso.
 
-Clients tap planning categories (Produce, Protein, Gluten-Free Staples, Diapers, etc.). The app aggregates weekly trends so staff can export a CSV before Monday ordering. No Food Lifeline APIs, no inventory sync, no NLP.
+Clients tap planning categories (Produce, Protein, Gluten-Free Staples, Diapers, etc.). Staff set supply levels, review an FLL pallet worksheet, and broadcast remaining category gaps to neighborhood donors.
 
 ## Features
 
 - **Category board** — Clients tap what they expect to need this week (one anonymous submission per session/week)
 - **Weekly SQL aggregation** — `COUNT(DISTINCT client_id)` by category with ISO week keys
 - **Trend dashboard** — `/admin/trends` with headline insights, comparison table, week selector
-- **CSV export** — Download trends for your Monday Food Lifeline workflow (second screen)
+- **Supply levels** — `/admin/supply` five-level assessment per planning category + storage limits
+- **Monday order worksheet** — `/admin/order` FLL pallet recommendations (6–8 cap) from demand + supply gap engine
+- **Category donor board** — `/community` with category pledges (no PII, no SKU math)
+- **CSV export** — Trends and FLL worksheet downloads for manual Food Lifeline ordering
 - **Rolling averages** — Configurable N-week comparison from saved snapshots
 - **SQLite / Turso** — Same deploy model as before; no Firebase or Supabase
 
@@ -47,13 +50,14 @@ For production on Render, set `TURSO_*` variables (see `docs/TURSO_SETUP.md`). F
 ### Staff workflow (Monday Food Lifeline prep)
 
 1. **Share the client board** — Send `/` to clients during the week (QR code, kiosk, SMS).
-2. **Review trends** — Open `/admin/trends` (password required). Default view is the current ISO week.
-3. **Compare history** — Table shows % of clients per category, delta vs last week, and vs rolling average.
-4. **Save snapshot** — Click **Save snapshot** (optional Sunday routine) to persist metrics for future comparisons.
-5. **Export CSV** — Download `demand-trends-YYYY-Www.csv` and use it while placing your Food Lifeline order manually.
-6. **Adjust settings** — `/admin/settings` for agency name, `food_bank_id`, and rolling window (1–12 weeks).
+2. **Review trends** — Open `/admin/trends`. Compare % of clients per category vs last week and rolling average.
+3. **Set supply levels** — `/admin/supply`: rate each planning category (critically low → full) and storage areas.
+4. **Monday order worksheet** — `/admin/order`: review FLL pallet checklist (max 6–8), category gap table, donor queue preview. Export CSV.
+5. **Place FLL order manually** — Use the worksheet alongside your Food Lifeline portal (no API integration).
+6. **Broadcast donor gaps** — `/admin/community` or one-click **Publish donor needs** from the order page. Share `/community` with neighborhood donors.
+7. **Adjust settings** — `/admin/settings` for agency name, rolling window, FLL pallet cap, and high-demand threshold.
 
-Legacy shop, cart, donor board, and shortage-broadcast URLs redirect to the new flow.
+Legacy shop and cart URLs redirect to the client request board.
 
 ### Client workflow
 
@@ -61,16 +65,25 @@ Legacy shop, cart, donor board, and shortage-broadcast URLs redirect to the new 
 2. Tap every category you expect to need this week.
 3. Submit once — a session UUID tracks anonymous demand; one submission per week.
 
+### Donor workflow
+
+1. Visit `/community` when staff have published the board.
+2. See low/critically low categories with example items (no client names or counts).
+3. Pledge a category at `/community/pledge` with optional note.
+
 ## Data model
 
 | Table / file | Purpose |
 |--------------|---------|
 | `categories.json` | Seed planning buckets (Produce, Protein, Diapers, …) |
+| `fll_pallets.json` | Food Lifeline pallet names mapped to planning categories |
 | `categories` table | Active planning categories per `food_bank_id` |
 | `client_requests` | One row per category tap; `visit_week` = ISO week key |
 | `trend_snapshots` | Saved weekly metrics for WoW / rolling-average comparisons |
-| `kv_store` `app_settings` | Agency name, `food_bank_id`, rolling window |
-| `items.json` | Legacy SKU catalog (optional reference; client UX no longer uses it) |
+| `kv_store` `staff_thresholds` | Supply levels per planning category + storage |
+| `kv_store` `app_settings` | Agency name, rolling window, FLL pallet cap |
+| `category_pledges` | Donor pledges by planning category |
+| `items.json` | Legacy SKU catalog (example items enrichment) |
 | Turso / `data/food_bank.db` | Persistence |
 
 ## Multi-agency roadmap
@@ -78,10 +91,6 @@ Legacy shop, cart, donor board, and shortage-broadcast URLs redirect to the new 
 **Today:** Single agency per deployment (`food_bank_id = default`).
 
 **Future:** Multiple agencies scoped by `food_bank_id` column already present on core tables.
-
-## Donors (phase 2 — not built)
-
-Public read-only view of top rising categories from the latest snapshot, using `donor_friendly_translation`. No pledges or inventory in v1 of this pivot.
 
 ## Deploy on Render (free)
 

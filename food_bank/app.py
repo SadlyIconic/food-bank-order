@@ -27,7 +27,7 @@ app.config.update(
 )
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "Iconic")
 
-PUBLIC_ENDPOINTS = frozenset({"request_board", "submit_requests"})
+PUBLIC_ENDPOINTS = frozenset({"request_board", "submit_requests", "community_board", "community_pledge"})
 
 store.load()
 
@@ -111,10 +111,34 @@ def legacy_order_redirect():
 
 
 @app.route("/community")
+def community_board():
+    board = store.get_community_needs()
+    return render_template("community.html", board=board)
+
+
 @app.route("/community/pledge", methods=["GET", "POST"])
-def legacy_community_redirect():
-    flash("The neighborhood donor board has moved to a future release.", "success")
-    return redirect(url_for("request_board"))
+def community_pledge():
+    board = store.get_community_needs()
+    open_categories = board.get("category_items", []) if board.get("published") else []
+
+    if request.method == "POST":
+        anonymous = request.form.get("anonymous") == "on"
+        donor_name = "" if anonymous else request.form.get("donor_name", "")
+        category_id = request.form.get("category_id", "")
+        note = request.form.get("note", "")
+        try:
+            pledge = store.add_category_pledge(donor_name, category_id, note)
+        except ValueError as exc:
+            flash(str(exc), "error")
+            return redirect(url_for("community_pledge"))
+        flash(f"Thank you! Pledge recorded for {pledge['category_name']}.", "success")
+        return redirect(url_for("community_board"))
+
+    return render_template(
+        "community_pledge.html",
+        board=board,
+        open_categories=open_categories,
+    )
 
 
 @app.route("/admin", methods=["GET", "POST"])
@@ -219,6 +243,10 @@ def admin_settings():
                 "agency_display_name": request.form.get("agency_display_name", ""),
                 "food_bank_id": request.form.get("food_bank_id", ""),
                 "rolling_weeks": request.form.get("rolling_weeks", settings["rolling_weeks"]),
+                "max_fll_pallets": request.form.get("max_fll_pallets", settings["max_fll_pallets"]),
+                "high_demand_threshold": request.form.get(
+                    "high_demand_threshold", settings["high_demand_threshold"]
+                ),
             }
         )
         flash("Settings saved.", "success")
@@ -232,17 +260,119 @@ def admin_dashboard():
     return redirect(url_for("admin_trends"))
 
 
+@app.route("/admin/supply", methods=["GET", "POST"])
+@admin_required
+def admin_supply():
+    thresholds = store.get_staff_thresholds()
+    categories = store.get_planning_categories(active_only=True)
+    level_options = [(v, store.STAFF_THRESHOLD_LABELS[v]) for v in store.STAFF_THRESHOLD_LEVELS]
+
+    if request.method == "POST":
+        cat_levels = {}
+        for category in categories:
+            val = request.form.get(f"cat_{category['id']}", "ok")
+            if val in store.STAFF_THRESHOLD_LEVELS:
+                cat_levels[category["id"]] = val
+        storage_levels = {}
+        for storage_type in store.STORAGE_TYPES:
+            val = request.form.get(f"storage_{storage_type}", "ok")
+            if val in store.STAFF_THRESHOLD_LEVELS:
+                storage_levels[storage_type] = val
+        store.save_staff_thresholds(cat_levels, storage_levels)
+        flash("Supply levels saved.", "success")
+        return redirect(url_for("admin_supply"))
+
+    return render_template(
+        "admin_supply.html",
+        thresholds=thresholds,
+        categories=categories,
+        cat_levels=thresholds.get("categories", {}),
+        storage_levels=thresholds.get("storage", {}),
+        storage_types=store.STORAGE_TYPES,
+        storage_labels=store.STORAGE_TYPE_LABELS,
+        level_options=level_options,
+    )
+
+
+@app.route("/admin/order")
+@admin_required
+def admin_order():
+    week_key = request.args.get("week", store.visit_week_key()).strip() or store.visit_week_key()
+    plan = store.compute_order_plan(week_key=week_key)
+    return render_template("admin_order.html", plan=plan)
+
+
+@app.route("/admin/order/export.csv")
+@admin_required
+def admin_order_export():
+    week_key = request.args.get("week", store.visit_week_key()).strip() or store.visit_week_key()
+    plan = store.compute_order_plan(week_key=week_key)
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["section", "week", "name", "value", "detail"])
+    for rec in plan["fll_recommendations"]:
+        writer.writerow(
+            [
+                "fll_pallet",
+                week_key,
+                rec["display_name"],
+                rec["suggested_pallets"],
+                rec["reason"],
+            ]
+        )
+    for row in plan["categories"]:
+        writer.writerow(
+            [
+                "category",
+                week_key,
+                row["display_name"],
+                row["gap_score"],
+                f"demand={row['demand_pct']}% supply={row['supply_label']}",
+            ]
+        )
+    for row in plan["donor_candidates"]:
+        writer.writerow(
+            [
+                "donor_candidate",
+                week_key,
+                row["display_name"],
+                row["supply_label"],
+                row["reason"],
+            ]
+        )
+
+    filename = f"fll-order-worksheet-{week_key}.csv"
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
 @app.route("/admin/capacity", methods=["GET", "POST"])
 @admin_required
 def admin_capacity():
-    flash("Daily shortage broadcast has been replaced by demand trends.", "success")
-    return redirect(url_for("admin_trends"))
+    return redirect(url_for("admin_supply"))
 
 
 @app.route("/admin/community", methods=["GET"])
 @admin_required
 def admin_community():
-    return redirect(url_for("admin_trends"))
+    board = store.get_community_needs(admin_preview=True)
+    pledges = store.get_all_category_pledges_for_round()
+    thresholds = store.get_staff_thresholds()
+    blocked_storage = [
+        store.STORAGE_TYPE_LABELS[st]
+        for st, level in thresholds.get("storage", {}).items()
+        if level == "full"
+    ]
+    return render_template(
+        "admin_community.html",
+        board=board,
+        pledges=pledges,
+        blocked_storage=blocked_storage,
+    )
 
 
 @app.route("/admin/inventory", methods=["GET", "POST"])
@@ -273,14 +403,37 @@ def admin_reset():
 @app.route("/admin/community/publish", methods=["POST"])
 @admin_required
 def admin_community_publish():
-    return redirect(url_for("admin_trends"))
+    published = request.form.get("published", "0") == "1"
+    store.set_community_published(published)
+    if published:
+        flash("Donor board is now live.", "success")
+    else:
+        flash("Donor board taken offline.", "success")
+    next_page = request.form.get("next", "")
+    if next_page == "admin_community":
+        return redirect(url_for("admin_community"))
+    return redirect(url_for("admin_community"))
 
 
 @app.route("/admin/community/pledge/<pledge_id>", methods=["POST"])
 @admin_required
 def admin_pledge_action(pledge_id: str):
-    del pledge_id
-    return redirect(url_for("admin_trends"))
+    action = request.form.get("action", "")
+    status_map = {"received": "received", "cancelled": "cancelled"}
+    status = status_map.get(action)
+    if not status:
+        flash("Invalid action.", "error")
+        return redirect(url_for("admin_community"))
+    try:
+        updated = store.update_category_pledge_status(pledge_id, status)
+    except ValueError as exc:
+        flash(str(exc), "error")
+        return redirect(url_for("admin_community"))
+    if updated is None:
+        flash("Pledge not found.", "error")
+    else:
+        flash(f"Pledge marked {status}.", "success")
+    return redirect(url_for("admin_community"))
 
 
 @app.route("/admin/round/<round_id>")

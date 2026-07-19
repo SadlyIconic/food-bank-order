@@ -10,6 +10,7 @@ from db import get_conn
 BASE_DIR = Path(__file__).resolve().parent
 ITEMS_FILE = BASE_DIR / "items.json"
 CATEGORIES_FILE = BASE_DIR / "categories.json"
+FLL_PALLETS_FILE = BASE_DIR / "fll_pallets.json"
 
 # Legacy JSON paths (migrated on first init)
 LEGACY_ORDERS_FILE = BASE_DIR / "orders.json"
@@ -56,9 +57,44 @@ DEFAULT_APP_SETTINGS = {
     "food_bank_id": "default",
     "agency_display_name": "Food Bank",
     "rolling_weeks": 4,
+    "max_fll_pallets": 7,
+    "high_demand_threshold": 50,
 }
 
 DEFAULT_FOOD_BANK_ID = "default"
+
+STAFF_THRESHOLD_LABELS = {
+    "critically_low": "Critically low",
+    "low": "Low",
+    "ok": "OK",
+    "high": "High",
+    "full": "Full",
+}
+
+LEGACY_CATALOG_TO_PLANNING_ID = {
+    "Produce": "produce",
+    "Protein": "protein",
+    "Dairy": "dairy",
+    "Grains": "grains",
+    "Canned Goods": "canned",
+    "Snacks": "snacks",
+    "Beverages": "snacks",
+    "Frozen": "protein",
+    "Household": "personal_care",
+}
+
+PLANNING_CATEGORY_STORAGE = {
+    "produce": "refrigerated",
+    "protein": "shelf",
+    "dairy": "refrigerated",
+    "grains": "shelf",
+    "gluten_free": "shelf",
+    "canned": "shelf",
+    "baby": "shelf",
+    "diapers": "shelf",
+    "personal_care": "shelf",
+    "snacks": "shelf",
+}
 
 # Map planning categories to items.json catalog categories and/or explicit item IDs.
 PLANNING_ITEM_SOURCES: dict[str, dict] = {
@@ -169,6 +205,16 @@ def _init_schema(conn) -> None:
 
         CREATE UNIQUE INDEX IF NOT EXISTS idx_trend_snapshots_week
             ON trend_snapshots (food_bank_id, week_key);
+
+        CREATE TABLE IF NOT EXISTS category_pledges (
+            id TEXT PRIMARY KEY,
+            created_at TEXT NOT NULL,
+            round_id TEXT,
+            category_id TEXT NOT NULL,
+            donor_display_name TEXT NOT NULL,
+            note TEXT,
+            status TEXT NOT NULL DEFAULT 'pledged'
+        );
         """
     )
     conn.commit()
@@ -313,12 +359,28 @@ def get_item_storage_type(item: dict) -> str:
     return "shelf"
 
 
+def _normalize_threshold_categories(raw: dict) -> dict:
+    normalized: dict[str, str] = {}
+    planning_ids = set(_planning_category_seed().keys())
+    for key, level in raw.items():
+        if level not in STAFF_THRESHOLD_LEVELS:
+            continue
+        if key in planning_ids:
+            normalized[key] = level
+            continue
+        mapped = LEGACY_CATALOG_TO_PLANNING_ID.get(key)
+        if mapped and mapped in planning_ids:
+            normalized[mapped] = level
+    return normalized
+
+
 def get_staff_thresholds() -> dict:
     with get_conn() as conn:
         thresholds = _kv_get(conn, "staff_thresholds", DEFAULT_STAFF_THRESHOLDS.copy())
     thresholds.setdefault("updated_at", "")
     thresholds.setdefault("categories", {})
     thresholds.setdefault("storage", {})
+    thresholds["categories"] = _normalize_threshold_categories(thresholds.get("categories", {}))
     return thresholds
 
 
@@ -907,7 +969,7 @@ def get_community_needs(
     include_unpublished: bool = False,
     admin_preview: bool = False,
 ) -> dict:
-    """Public needs board data — no household names or order details."""
+    """Public category needs board — no household names or client counts."""
     show_unpublished = include_unpublished or admin_preview
     trip = get_trip_settings()
     published = bool(trip.get("community_published"))
@@ -927,6 +989,7 @@ def get_community_needs(
             "capacity_set": False,
             "all_covered": False,
             "items": [],
+            "category_items": [],
             "pledges": [],
             "categories": [],
             "donors": [],
@@ -943,6 +1006,7 @@ def get_community_needs(
             "capacity_set": True,
             "all_covered": False,
             "items": [],
+            "category_items": [],
             "pledges": [],
             "categories": [],
             "donors": [],
@@ -952,13 +1016,9 @@ def get_community_needs(
             "round_id": current_round_id(),
         }
 
-    donor_items = get_donor_needs()
-    categories: set[str] = set()
-    for item in donor_items:
-        if item.get("category"):
-            categories.add(item["category"])
-
-    pledges = get_pledges_for_round(statuses=["pledged", "received"])
+    category_items = get_category_donor_board()
+    tab_labels = sorted({row["display_name"] for row in category_items})
+    pledges = get_category_pledges_for_round(statuses=["pledged", "received"])
     donor_names = sorted(
         {
             p["donor_display_name"]
@@ -967,10 +1027,8 @@ def get_community_needs(
         }
     )
 
-    if not donor_items:
+    if not category_items:
         state = "all_covered"
-    elif all(i["remaining_need"] <= 0 for i in donor_items):
-        state = "pledged_out"
     else:
         state = "open"
 
@@ -978,10 +1036,11 @@ def get_community_needs(
         "published": published,
         "ready": True,
         "capacity_set": True,
-        "all_covered": len(donor_items) == 0,
-        "items": donor_items,
+        "all_covered": len(category_items) == 0,
+        "items": [],
+        "category_items": category_items,
         "pledges": pledges,
-        "categories": sorted(categories),
+        "categories": tab_labels,
         "donors": donor_names,
         "trip": trip_context,
         "capacity_updated_at": thresholds.get("updated_at", ""),
@@ -1311,6 +1370,10 @@ def get_app_settings() -> dict:
     for key, value in DEFAULT_APP_SETTINGS.items():
         settings.setdefault(key, value)
     settings["rolling_weeks"] = max(1, min(12, int(settings.get("rolling_weeks", 4) or 4)))
+    settings["max_fll_pallets"] = max(6, min(8, int(settings.get("max_fll_pallets", 7) or 7)))
+    settings["high_demand_threshold"] = max(
+        20, min(90, int(settings.get("high_demand_threshold", 50) or 50))
+    )
     return settings
 
 
@@ -1323,6 +1386,16 @@ def save_app_settings(settings: dict) -> dict:
     if "rolling_weeks" in settings:
         try:
             current["rolling_weeks"] = max(1, min(12, int(settings["rolling_weeks"])))
+        except (TypeError, ValueError):
+            pass
+    if "max_fll_pallets" in settings:
+        try:
+            current["max_fll_pallets"] = max(6, min(8, int(settings["max_fll_pallets"])))
+        except (TypeError, ValueError):
+            pass
+    if "high_demand_threshold" in settings:
+        try:
+            current["high_demand_threshold"] = max(20, min(90, int(settings["high_demand_threshold"])))
         except (TypeError, ValueError):
             pass
     with get_conn() as conn:
@@ -1652,3 +1725,345 @@ def compute_weekly_trends(
         "categories": enriched,
         "insights": insights[:6],
     }
+
+
+def get_fll_pallets() -> dict:
+    return _read_json(FLL_PALLETS_FILE, {})
+
+
+def compute_order_plan(
+    food_bank_id: str | None = None,
+    week_key: str | None = None,
+) -> dict:
+    settings = get_app_settings()
+    fb_id = food_bank_id or settings["food_bank_id"]
+    wk = week_key or visit_week_key()
+    max_pallets = settings["max_fll_pallets"]
+    high_demand_threshold = settings["high_demand_threshold"]
+
+    trends = compute_weekly_trends(fb_id, wk)
+    thresholds = get_staff_thresholds()
+    cat_levels = thresholds.get("categories", {})
+    storage_levels = thresholds.get("storage", {})
+    pallets = get_fll_pallets()
+    trend_map = {row["category_id"]: row for row in trends["categories"]}
+
+    categories_out: list[dict] = []
+    for cat in get_planning_categories(fb_id, active_only=True):
+        cid = cat["id"]
+        trend = trend_map.get(cid, {})
+        demand_pct = float(trend.get("demand_pct", 0) or 0)
+        vs_rolling = trend.get("vs_rolling_avg_pct")
+        vs_rolling_val = float(vs_rolling) if vs_rolling is not None else 0.0
+        supply_level = cat_levels.get(cid, "ok")
+        supply_urgency = CATEGORY_PRIORITY.get(supply_level, 2)
+        skipped = supply_level in ("high", "full") and demand_pct <= high_demand_threshold
+        gap_score = (
+            0.0
+            if skipped
+            else demand_pct + (supply_urgency * 15) + max(0.0, vs_rolling_val)
+        )
+        storage_type = PLANNING_CATEGORY_STORAGE.get(cid, "shelf")
+        categories_out.append(
+            {
+                "category_id": cid,
+                "display_name": cat["display_name"],
+                "demand_pct": demand_pct,
+                "client_count": int(trend.get("client_count", 0) or 0),
+                "vs_rolling_avg_pct": vs_rolling,
+                "supply_level": supply_level,
+                "supply_label": STAFF_THRESHOLD_LABELS.get(supply_level, supply_level),
+                "supply_urgency": supply_urgency,
+                "gap_score": round(gap_score, 1),
+                "storage_type": storage_type,
+                "storage_level": storage_levels.get(storage_type, "ok"),
+                "skipped": skipped,
+            }
+        )
+
+    pallet_scores: list[dict] = []
+    for pallet_id, pallet in pallets.items():
+        mapped = pallet.get("planning_categories", [])
+        scores = [
+            c["gap_score"]
+            for c in categories_out
+            if c["category_id"] in mapped and not c["skipped"]
+        ]
+        pallet_scores.append(
+            {
+                "pallet_id": pallet_id,
+                "display_name": pallet.get("display_name", pallet_id),
+                "storage": pallet.get("storage", "shelf"),
+                "planning_categories": mapped,
+                "score": round(max(scores) if scores else 0.0, 1),
+                "default_pallets": max(1, int(pallet.get("default_pallets", 1) or 1)),
+            }
+        )
+    pallet_scores.sort(key=lambda row: row["score"], reverse=True)
+
+    fll_recommendations: list[dict] = []
+    total_pallets = 0
+    for pallet in pallet_scores:
+        if pallet["score"] <= 0 or total_pallets >= max_pallets:
+            continue
+        suggested = min(pallet["default_pallets"], max_pallets - total_pallets)
+        if suggested <= 0:
+            continue
+        reasons: list[str] = []
+        for cat_row in categories_out:
+            if cat_row["category_id"] not in pallet["planning_categories"]:
+                continue
+            if cat_row["gap_score"] <= 0:
+                continue
+            reasons.append(
+                f"{cat_row['display_name']} {cat_row['supply_label'].lower()}; "
+                f"{cat_row['demand_pct']:.0f}% client demand"
+            )
+        fll_recommendations.append(
+            {
+                "pallet_id": pallet["pallet_id"],
+                "display_name": pallet["display_name"],
+                "action": "increase",
+                "suggested_pallets": suggested,
+                "score": pallet["score"],
+                "storage": pallet["storage"],
+                "reason": "; ".join(reasons[:2]) or "Priority gap",
+            }
+        )
+        total_pallets += suggested
+
+    category_to_pallet: dict[str, str] = {}
+    for rec in fll_recommendations:
+        for cid in pallets.get(rec["pallet_id"], {}).get("planning_categories", []):
+            category_to_pallet[cid] = rec["pallet_id"]
+    for cat_row in categories_out:
+        pallet_id = category_to_pallet.get(cat_row["category_id"])
+        cat_row["fll_pallet_id"] = pallet_id
+        cat_row["fll_pallet_name"] = (
+            pallets.get(pallet_id, {}).get("display_name") if pallet_id else None
+        )
+
+    covered_by_fll = set(category_to_pallet.keys())
+    donor_candidates: list[dict] = []
+    for cat_row in categories_out:
+        if cat_row["supply_level"] not in ("critically_low", "low"):
+            continue
+        if cat_row["storage_level"] == "full":
+            continue
+        cid = cat_row["category_id"]
+        if cid in covered_by_fll and cat_row["supply_level"] != "critically_low":
+            continue
+        reason_parts: list[str] = []
+        if cat_row["supply_level"] == "critically_low":
+            reason_parts.append("Critically low supply")
+        elif cat_row["supply_level"] == "low":
+            reason_parts.append("Low supply")
+        if cat_row["demand_pct"] > 0:
+            reason_parts.append(f"{cat_row['demand_pct']:.0f}% client demand")
+        if cid in covered_by_fll:
+            reason_parts.append("May need donor top-up beyond FLL")
+        donor_candidates.append(
+            {
+                "category_id": cid,
+                "display_name": cat_row["display_name"],
+                "supply_level": cat_row["supply_level"],
+                "supply_label": cat_row["supply_label"],
+                "demand_pct": cat_row["demand_pct"],
+                "demand_signal": cat_row["demand_pct"] >= high_demand_threshold / 2,
+                "reason": "; ".join(reason_parts) or "Staff priority",
+            }
+        )
+    donor_candidates.sort(
+        key=lambda row: (CATEGORY_PRIORITY.get(row["supply_level"], 0), row["demand_pct"]),
+        reverse=True,
+    )
+
+    cooler_count = sum(
+        1 for rec in fll_recommendations if rec.get("storage") == "refrigerated"
+    )
+    storage_warnings: list[str] = []
+    if cooler_count >= 3:
+        storage_warnings.append(
+            f"{cooler_count} refrigerated pallets recommended — check cooler capacity."
+        )
+
+    return {
+        "food_bank_id": fb_id,
+        "week_key": wk,
+        "computed_at": _utc_now(),
+        "max_fll_pallets": max_pallets,
+        "total_suggested_pallets": total_pallets,
+        "categories": categories_out,
+        "fll_recommendations": fll_recommendations,
+        "donor_candidates": donor_candidates,
+        "storage_warnings": storage_warnings,
+        "capacity_set": capacity_is_set(),
+    }
+
+
+def get_category_donor_board() -> list[dict]:
+    plan = compute_order_plan()
+    settings = get_app_settings()
+    signal_threshold = settings["high_demand_threshold"] / 2
+    planning = {cat["id"]: cat for cat in get_planning_categories()}
+
+    board: list[dict] = []
+    pledged_ids = {
+        p["category_id"]
+        for p in get_category_pledges_for_round(statuses=["pledged", "received"])
+    }
+    for candidate in plan["donor_candidates"]:
+        cat = planning.get(candidate["category_id"], {})
+        board.append(
+            {
+                "category_id": candidate["category_id"],
+                "display_name": candidate["display_name"],
+                "donor_friendly_translation": cat.get("donor_friendly_translation", ""),
+                "description": cat.get("description", ""),
+                "example_items": cat.get("example_items", []),
+                "supply_level": candidate["supply_level"],
+                "supply_label": candidate["supply_label"],
+                "demand_pct": candidate["demand_pct"],
+                "demand_signal": candidate["demand_pct"] >= signal_threshold,
+                "reason": candidate["reason"],
+                "priority_score": CATEGORY_PRIORITY.get(candidate["supply_level"], 0),
+                "pledged": candidate["category_id"] in pledged_ids,
+            }
+        )
+    board.sort(key=lambda row: row["priority_score"], reverse=True)
+    return board
+
+
+def _category_pledge_row_dict(row) -> dict:
+    planning = {cat["id"]: cat for cat in get_planning_categories()}
+    cat = planning.get(row["category_id"], {})
+    return {
+        "id": row["id"],
+        "created_at": row["created_at"],
+        "round_id": row["round_id"],
+        "donor_display_name": row["donor_display_name"],
+        "category_id": row["category_id"],
+        "category_name": cat.get("display_name", row["category_id"]),
+        "note": row["note"] or "",
+        "status": row["status"],
+    }
+
+
+def get_category_pledges_for_round(
+    round_id: str | None = None,
+    status: str = "pledged",
+    *,
+    statuses: list[str] | None = None,
+) -> list[dict]:
+    rid = round_id if round_id is not None else current_round_id()
+    if statuses:
+        placeholders = ",".join("?" * len(statuses))
+        query = f"""SELECT id, created_at, round_id, category_id, donor_display_name, note, status
+                    FROM category_pledges
+                    WHERE round_id = ? AND status IN ({placeholders})
+                    ORDER BY created_at DESC"""
+        params: list = [rid, *statuses]
+    else:
+        query = """SELECT id, created_at, round_id, category_id, donor_display_name, note, status
+                   FROM category_pledges
+                   WHERE round_id = ? AND status = ?
+                   ORDER BY created_at DESC"""
+        params = [rid, status]
+    with get_conn() as conn:
+        rows = conn.execute(query, params).fetchall()
+    return [_category_pledge_row_dict(row) for row in rows]
+
+
+def get_all_category_pledges_for_round(round_id: str | None = None) -> list[dict]:
+    rid = round_id if round_id is not None else current_round_id()
+    with get_conn() as conn:
+        rows = conn.execute(
+            """SELECT id, created_at, round_id, category_id, donor_display_name, note, status
+               FROM category_pledges
+               WHERE round_id = ?
+               ORDER BY created_at DESC""",
+            (rid,),
+        ).fetchall()
+    return [_category_pledge_row_dict(row) for row in rows]
+
+
+def add_category_pledge(
+    donor_display_name: str,
+    category_id: str,
+    note: str = "",
+) -> dict:
+    name = (donor_display_name or "").strip()
+    if not name:
+        name = ANONYMOUS_DONOR_NAME
+    if len(name) > 100:
+        raise ValueError("Donor name is too long.")
+
+    cid = (category_id or "").strip()
+    allowed = {cat["id"] for cat in get_planning_categories(active_only=True)}
+    if cid not in allowed:
+        raise ValueError("Invalid category.")
+
+    trip = get_trip_settings()
+    if not trip.get("community_published"):
+        raise ValueError("Community board is not open for pledges yet.")
+
+    needs = get_community_needs(include_unpublished=True)
+    if not needs.get("ready"):
+        raise ValueError("Supply levels have not been set yet.")
+
+    open_ids = {row["category_id"] for row in needs.get("category_items", [])}
+    if cid not in open_ids:
+        raise ValueError("This category is not on the needs board.")
+
+    note = (note or "").strip()[:500]
+    pledge = {
+        "id": str(uuid.uuid4()),
+        "created_at": _utc_now(),
+        "round_id": current_round_id(),
+        "donor_display_name": name,
+        "category_id": cid,
+        "note": note,
+        "status": "pledged",
+    }
+    with get_conn() as conn:
+        conn.execute(
+            """INSERT INTO category_pledges
+               (id, created_at, round_id, category_id, donor_display_name, note, status)
+               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            (
+                pledge["id"],
+                pledge["created_at"],
+                pledge["round_id"],
+                pledge["category_id"],
+                pledge["donor_display_name"],
+                pledge["note"],
+                pledge["status"],
+            ),
+        )
+        conn.commit()
+    planning = {cat["id"]: cat for cat in get_planning_categories()}
+    return {
+        **pledge,
+        "category_name": planning.get(cid, {}).get("display_name", cid),
+    }
+
+
+def update_category_pledge_status(pledge_id: str, status: str) -> dict | None:
+    if status not in ("pledged", "received", "cancelled"):
+        raise ValueError("Invalid pledge status.")
+    with get_conn() as conn:
+        row = conn.execute(
+            """SELECT id, created_at, round_id, category_id, donor_display_name, note, status
+               FROM category_pledges WHERE id = ?""",
+            (pledge_id,),
+        ).fetchone()
+        if row is None:
+            return None
+        conn.execute(
+            "UPDATE category_pledges SET status = ? WHERE id = ?",
+            (status, pledge_id),
+        )
+        conn.commit()
+    updated = _category_pledge_row_dict(row)
+    updated["status"] = status
+    return updated

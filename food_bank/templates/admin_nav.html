@@ -1,0 +1,9 @@
+<a href="{{ url_for('admin_trends') }}"{% if admin_nav == 'trends' %} class="active"{% endif %}>Trends</a>
+<a href="{{ url_for('admin_supply') }}"{% if admin_nav == 'supply' %} class="active"{% endif %}>Supply</a>
+<a href="{{ url_for('admin_order') }}"{% if admin_nav == 'order' %} class="active"{% endif %}>Monday order</a>
+<a href="{{ url_for('admin_community') }}"{% if admin_nav == 'donors' %} class="active"{% endif %}>Donors</a>
+<a href="{{ url_for('admin_settings') }}"{% if admin_nav == 'settings' %} class="active"{% endif %}>Settings</a>
+<a href="{{ url_for('request_board') }}">Client board</a>
+<form method="post" action="{{ url_for('admin_logout') }}" class="inline-form">
+  <button type="submit" class="btn btn-muted btn-sm">Log out</button>
+</form>

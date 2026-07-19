@@ -7,17 +7,17 @@
   <div>
     <h1 data-i18n="community_pledge_title">Make a pledge</h1>
     <p class="page-subtitle" data-i18n="community_pledge_subtitle">
-      Help your neighborhood food agency by pledging items from today's shortage list.
+      Help your neighborhood food agency by pledging a category from today's needs list.
     </p>
   </div>
-  <a href="{{ url_for('community_board') }}" class="btn btn-sm" data-i18n="community_back_board">Back to shortages board</a>
+  <a href="{{ url_for('community_board') }}" class="btn btn-sm" data-i18n="community_back_board">Back to needs board</a>
 </div>
 
 {% if not board.published %}
   <div class="empty-state community-empty">
     <p data-i18n="community_unpublished">The neighborhood board is being prepared. Check back soon.</p>
   </div>
-{% elif not open_items %}
+{% elif not open_categories %}
   <div class="empty-state community-empty community-success">
     <p data-i18n="community_no_open_items">Nothing open for pledges right now — thank you!</p>
   </div>
@@ -33,19 +33,14 @@
     </div>
 
     <div class="form-group">
-      <label for="item_id" data-i18n="item_col">Item</label>
-      <select id="item_id" name="item_id" required>
-        {% for item in open_items %}
-          <option value="{{ item.item_id }}" data-name-en="{{ item.name }}">
-            {{ item.name }} — {{ item.remaining_need }} {{ item.unit }} open
+      <label for="category_id" data-i18n="community_category_col">Category</label>
+      <select id="category_id" name="category_id" required>
+        {% for item in open_categories %}
+          <option value="{{ item.category_id }}">
+            {{ item.donor_friendly_translation or item.display_name }} — {{ item.supply_label }}
           </option>
         {% endfor %}
       </select>
-    </div>
-
-    <div class="form-group">
-      <label for="quantity" data-i18n="quantity">Quantity</label>
-      <input type="number" id="quantity" name="quantity" value="1" min="1" max="50" required>
     </div>
 
     <div class="form-group">
@@ -67,17 +62,6 @@
       anon.addEventListener("change", () => {
         nameInput.disabled = anon.checked;
         if (anon.checked) nameInput.value = "";
-      });
-    }
-
-    const itemSelect = document.getElementById("item_id");
-    if (itemSelect) {
-      Array.from(itemSelect.options).forEach((opt) => {
-        const en = opt.dataset.nameEn;
-        if (en) {
-          const id = opt.value;
-          opt.textContent = opt.textContent.replace(en, FoodBankI18n.itemName(id, en));
-        }
       });
     }
   });

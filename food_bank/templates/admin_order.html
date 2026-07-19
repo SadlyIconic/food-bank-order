@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}Monday order — Admin{% endblock %}
+{% block body_class %}admin-page{% endblock %}
+
+{% block nav %}
+  {% set admin_nav = 'order' %}
+  {% include "admin_nav.html" %}
+{% endblock %}
+
+{% block content %}
+<div class="page-header admin-header">
+  <div>
+    <h1>Monday order worksheet</h1>
+    <p class="page-subtitle">FLL pallet recommendations from client demand + supply levels. Place your Food Lifeline order manually.</p>
+  </div>
+  <div class="admin-actions">
+    <a href="{{ url_for('admin_order_export', week=plan.week_key) }}" class="btn btn-primary btn-sm">Export CSV</a>
+    {% if plan.capacity_set %}
+      <form method="post" action="{{ url_for('admin_community_publish') }}" class="inline-form">
+        <input type="hidden" name="published" value="1">
+        <input type="hidden" name="next" value="admin_community">
+        <button type="submit" class="btn btn-muted btn-sm">Publish donor needs</button>
+      </form>
+    {% endif %}
+  </div>
+</div>
+
+{% if not plan.capacity_set %}
+<div class="card notice-card">
+  <p>Set <a href="{{ url_for('admin_supply') }}">supply levels</a> before using this worksheet.</p>
+</div>
+{% endif %}
+
+{% if plan.storage_warnings %}
+<div class="card storage-blocked-notice">
+  <h2 class="card-title">Storage heads-up</h2>
+  <ul>
+    {% for warning in plan.storage_warnings %}
+      <li>{{ warning }}</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-label">Week</div>
+    <div class="stat-value stat-value-sm">{{ plan.week_key }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">FLL pallet cap</div>
+    <div class="stat-value">{{ plan.max_fll_pallets }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Suggested pallets</div>
+    <div class="stat-value">{{ plan.total_suggested_pallets }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Donor categories</div>
+    <div class="stat-value">{{ plan.donor_candidates | length }}</div>
+  </div>
+</div>
+
+<section class="card">
+  <h2>FLL pallet checklist</h2>
+  {% if plan.fll_recommendations %}
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Pallet</th>
+        <th>Suggested</th>
+        <th>Storage</th>
+        <th>Score</th>
+        <th>Reason</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for rec in plan.fll_recommendations %}
+      <tr>
+        <td><strong>{{ rec.display_name }}</strong></td>
+        <td>{{ rec.suggested_pallets }}</td>
+        <td>{{ rec.storage }}</td>
+        <td>{{ rec.score }}</td>
+        <td>{{ rec.reason }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="meta">No pallet increases recommended — supply and demand look balanced, or supply levels are not set.</p>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>Category breakdown</h2>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th>Client demand</th>
+          <th>Supply</th>
+          <th>Gap score</th>
+          <th>FLL pallet</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in plan.categories %}
+        <tr{% if row.skipped %} class="row-muted"{% endif %}>
+          <td>{{ row.display_name }}</td>
+          <td>{{ row.demand_pct }}% ({{ row.client_count }} clients)</td>
+          <td>{{ row.supply_label }}</td>
+          <td>{{ row.gap_score }}</td>
+          <td>{{ row.fll_pallet_name or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Donor queue preview</h2>
+  <p class="meta">Categories that will appear on the neighborhood board after broadcast (low/critically low, not fully covered by FLL).</p>
+  {% if plan.donor_candidates %}
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Category</th>
+        <th>Supply</th>
+        <th>Demand signal</th>
+        <th>Reason</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in plan.donor_candidates %}
+      <tr>
+        <td>{{ row.display_name }}</td>
+        <td>{{ row.supply_label }}</td>
+        <td>{% if row.demand_signal %}Many families requested{% else %}—{% endif %}</td>
+        <td>{{ row.reason }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="meta">No donor categories queued — gaps are covered by FLL recommendations or supply is adequate.</p>
+  {% endif %}
+</section>
+{% endblock %}

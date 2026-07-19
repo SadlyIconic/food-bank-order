@@ -1,0 +1,32 @@
+{
+  "produce_mix": {
+    "display_name": "Produce Mix",
+    "planning_categories": ["produce"],
+    "storage": "refrigerated",
+    "default_pallets": 1
+  },
+  "protein_pallet": {
+    "display_name": "Protein",
+    "planning_categories": ["protein"],
+    "storage": "shelf",
+    "default_pallets": 1
+  },
+  "dairy_cooler": {
+    "display_name": "Dairy Cooler",
+    "planning_categories": ["dairy"],
+    "storage": "refrigerated",
+    "default_pallets": 1
+  },
+  "dry_grocery": {
+    "display_name": "Dry Grocery",
+    "planning_categories": ["grains", "canned", "snacks"],
+    "storage": "shelf",
+    "default_pallets": 1
+  },
+  "household": {
+    "display_name": "Household / Hygiene",
+    "planning_categories": ["diapers", "personal_care", "baby"],
+    "storage": "shelf",
+    "default_pallets": 1
+  }
+}

@@ -1,25 +1,28 @@
 {% extends "base.html" %}
 
-{% block title %}Broadcast — Admin{% endblock %}
+{% block title %}Donor broadcast — Admin{% endblock %}
+{% block body_class %}admin-page{% endblock %}
+
+{% block nav %}
+  {% set admin_nav = 'donors' %}
+  {% include "admin_nav.html" %}
+{% endblock %}
 
 {% block content %}
-<div class="page-header">
+<div class="page-header admin-header">
   <div>
-    <h1>Broadcast shortages</h1>
-    <p class="page-subtitle">Preview today's shortages, broadcast to neighborhood donors, and moderate pledges.</p>
+    <h1>Donor broadcast</h1>
+    <p class="page-subtitle">Preview category gaps, publish to neighborhood donors, and moderate pledges.</p>
   </div>
-  <div class="header-actions">
-    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-sm">Dashboard</a>
+  <div class="admin-actions">
     <a href="{{ url_for('community_board') }}" class="btn btn-sm" target="_blank" rel="noopener">View public board</a>
-    <form method="post" action="{{ url_for('admin_logout') }}" class="inline-form">
-      <button type="submit" class="btn btn-muted">Log out</button>
-    </form>
+    <a href="{{ url_for('admin_order') }}" class="btn btn-sm">Monday order</a>
   </div>
 </div>
 
 <div class="summary-cards">
   <div class="summary-card">
-    <span class="summary-label">Last broadcast set</span>
+    <span class="summary-label">Supply levels set</span>
     <span class="summary-value">{{ 'Yes' if board.capacity_set else 'Not yet' }}</span>
   </div>
   <div class="summary-card{% if board.published %} summary-card-warn{% endif %}">
@@ -27,8 +30,8 @@
     <span class="summary-value">{{ 'Yes' if board.published else 'No' }}</span>
   </div>
   <div class="summary-card">
-    <span class="summary-label">Open items</span>
-    <span class="summary-value">{{ board.items | selectattr('remaining_need', 'gt', 0) | list | length }}</span>
+    <span class="summary-label">Open categories</span>
+    <span class="summary-value">{{ board.category_items | length }}</span>
   </div>
   <div class="summary-card">
     <span class="summary-label">Active pledges</span>
@@ -50,7 +53,7 @@
 <div class="card">
   <h2 class="card-title">Broadcast controls</h2>
   {% if not board.capacity_set %}
-    <p class="status-note">Set today's shortages on <a href="{{ url_for('admin_capacity') }}">Daily shortage broadcast</a> before going live.</p>
+    <p class="status-note">Set <a href="{{ url_for('admin_supply') }}">supply levels</a> before going live.</p>
   {% else %}
     <p class="meta">Trip: {{ board.trip.trip_name or '—' }}{% if board.trip.pickup_date %} · {{ board.trip.pickup_date }}{% endif %}</p>
     <div class="form-actions">
@@ -69,32 +72,30 @@
   {% endif %}
 </div>
 
-{% if board.items %}
+{% if board.category_items %}
   <div class="card">
-    <h2 class="card-title">Preview — open shortages</h2>
+    <h2 class="card-title">Preview — open categories</h2>
     <table class="data-table">
       <thead>
         <tr>
-          <th>Item</th>
           <th>Category</th>
-          <th class="num-col">Requested</th>
-          <th class="num-col">Pledged</th>
-          <th class="num-col">Still open</th>
+          <th>Supply</th>
+          <th>Demand signal</th>
+          <th>Reason</th>
         </tr>
       </thead>
       <tbody>
-        {% for item in board.items %}
+        {% for item in board.category_items %}
           <tr>
             <td>
-              {{ item.name }}
-              {% if item.category_level == 'critically_low' %}
-                <span class="badge badge-high-demand">High demand</span>
+              {{ item.display_name }}
+              {% if item.supply_level == 'critically_low' %}
+                <span class="badge badge-high-demand">Critically low</span>
               {% endif %}
             </td>
-            <td>{{ item.category }}</td>
-            <td class="num-col">{{ item.requested }}</td>
-            <td class="num-col">{{ item.pledged }}</td>
-            <td class="num-col"><strong>{{ item.remaining_need }}</strong></td>
+            <td>{{ item.supply_label }}</td>
+            <td>{% if item.demand_signal %}Many families requested{% else %}—{% endif %}</td>
+            <td>{{ item.reason }}</td>
           </tr>
         {% endfor %}
       </tbody>
@@ -102,7 +103,7 @@
   </div>
 {% elif board.capacity_set %}
   <div class="empty-state">
-    <p>No open shortages to broadcast — demand is covered or filtered by today's shortage settings.</p>
+    <p>No category gaps to broadcast — supply is adequate or covered by FLL recommendations.</p>
   </div>
 {% endif %}
 
@@ -113,8 +114,7 @@
       <thead>
         <tr>
           <th>Donor</th>
-          <th>Item</th>
-          <th class="num-col">Qty</th>
+          <th>Category</th>
           <th>Status</th>
           <th>Note</th>
           <th></th>
@@ -124,8 +124,7 @@
         {% for pledge in pledges %}
           <tr>
             <td>{{ pledge.donor_display_name }}</td>
-            <td>{{ pledge.item_name }}</td>
-            <td class="num-col">{{ pledge.quantity }}</td>
+            <td>{{ pledge.category_name }}</td>
             <td><span class="badge{% if pledge.status == 'pledged' %} badge-warn{% elif pledge.status == 'received' %} badge-status-received{% endif %}">{{ pledge.status }}</span></td>
             <td>{{ pledge.note or '—' }}</td>
             <td>

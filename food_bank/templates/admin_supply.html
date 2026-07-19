@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Supply levels — Admin{% endblock %}
+{% block body_class %}admin-page{% endblock %}
+
+{% block nav %}
+  {% set admin_nav = 'supply' %}
+  {% include "admin_nav.html" %}
+{% endblock %}
+
+{% block content %}
+<div class="page-header admin-header">
+  <div>
+    <h1>Supply levels</h1>
+    <p class="page-subtitle">How full is each area right now? Used with client demand to plan FLL pallets and donor broadcast.</p>
+  </div>
+</div>
+
+<form method="post" action="{{ url_for('admin_supply') }}">
+  {% if thresholds.updated_at %}
+    <p class="meta">Last updated: {{ thresholds.updated_at[:10] }} {{ thresholds.updated_at[11:16] }} UTC</p>
+  {% else %}
+    <p class="status-note">Supply levels are not set yet. Save once to enable the Monday order worksheet and donor board.</p>
+  {% endif %}
+
+  <div class="card">
+    <h2 class="card-title">Planning categories</h2>
+    <p class="meta">Critically low and low categories drive FLL recommendations and donor broadcast. High and full are deprioritized.</p>
+    <table class="data-table capacity-table">
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th>Supply level</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for category in categories %}
+          <tr>
+            <td>{{ category.display_name }}</td>
+            <td>
+              <select name="cat_{{ category.id }}" class="capacity-select">
+                {% for value, label in level_options %}
+                  <option value="{{ value }}"{% if cat_levels.get(category.id, 'ok') == value %} selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2 class="card-title">Storage limits</h2>
+    <p class="meta">When storage is full, categories in that type are blocked from the neighborhood broadcast.</p>
+    <table class="data-table capacity-table">
+      <thead>
+        <tr>
+          <th>Storage</th>
+          <th>Level</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for storage_type in storage_types %}
+          <tr>
+            <td>{{ storage_labels[storage_type] }}</td>
+            <td>
+              <select name="storage_{{ storage_type }}" class="capacity-select">
+                {% for value, label in level_options %}
+                  <option value="{{ value }}"{% if storage_levels.get(storage_type, 'ok') == value %} selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="form-actions">
+    <button type="submit" class="btn btn-primary">Save supply levels</button>
+    <a href="{{ url_for('admin_order') }}" class="btn btn-muted">Go to Monday order</a>
+  </div>
+</form>
+{% endblock %}

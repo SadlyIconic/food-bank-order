@@ -4,18 +4,14 @@
 {% block body_class %}admin-page{% endblock %}
 
 {% block nav %}
-  <a href="{{ url_for('admin_trends') }}">Trends</a>
-  <a href="{{ url_for('admin_settings') }}" class="active">Settings</a>
-  <a href="{{ url_for('request_board') }}">Client board</a>
-  <form method="post" action="{{ url_for('admin_logout') }}" class="inline-form">
-    <button type="submit" class="btn btn-muted btn-sm">Log out</button>
-  </form>
+  {% set admin_nav = 'settings' %}
+  {% include "admin_nav.html" %}
 {% endblock %}
 
 {% block content %}
 <div class="page-header">
   <h1>Settings</h1>
-  <p class="page-subtitle">Agency identity and trend comparison window.</p>
+  <p class="page-subtitle">Agency identity, trend window, and FLL pallet planning limits.</p>
 </div>
 
 <div class="card">
@@ -32,6 +28,16 @@
     <div class="form-group">
       <label for="rolling_weeks">Rolling average window (weeks)</label>
       <input type="number" id="rolling_weeks" name="rolling_weeks" min="1" max="12" value="{{ settings.rolling_weeks }}">
+    </div>
+    <div class="form-group">
+      <label for="max_fll_pallets">Max FLL pallets per order</label>
+      <input type="number" id="max_fll_pallets" name="max_fll_pallets" min="6" max="8" value="{{ settings.max_fll_pallets }}">
+      <p class="form-hint">Renewal typically orders 6–8 pallets from Food Lifeline.</p>
+    </div>
+    <div class="form-group">
+      <label for="high_demand_threshold">High demand threshold (% of clients)</label>
+      <input type="number" id="high_demand_threshold" name="high_demand_threshold" min="20" max="90" value="{{ settings.high_demand_threshold }}">
+      <p class="form-hint">Categories above this demand % stay in the FLL plan even when supply is high.</p>
     </div>
     <div class="form-actions">
       <button type="submit" class="btn btn-primary">Save settings</button>
