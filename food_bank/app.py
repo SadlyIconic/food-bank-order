@@ -27,7 +27,13 @@ app.config.update(
 )
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "Iconic")
 
-PUBLIC_ENDPOINTS = frozenset({"request_board", "submit_requests", "community_board", "community_pledge"})
+PUBLIC_ENDPOINTS = frozenset({
+    "request_board",
+    "submit_requests",
+    "community_board",
+    "community_pledge",
+    "about",
+})
 
 store.load()
 
@@ -65,6 +71,11 @@ def admin_required(view):
         return view(*args, **kwargs)
 
     return wrapped
+
+
+@app.route("/about")
+def about():
+    return render_template("about.html")
 
 
 @app.route("/")

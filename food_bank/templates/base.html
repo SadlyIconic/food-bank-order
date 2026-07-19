@@ -10,7 +10,17 @@
 <body class="{% block body_class %}{% endblock %}">
   <header class="site-header {% block header_class %}{% endblock %}">
     <div class="container header-inner">
-      <a href="{{ url_for('request_board') }}" class="logo" data-i18n="app_name">{{ agency_name | default('Food Bank') }}</a>
+      {% if request.endpoint and request.endpoint.startswith('admin') %}
+        <a href="{{ url_for('request_board') }}" class="logo">{{ agency_name | default('Food Bank') }}</a>
+      {% else %}
+        <a href="{{ url_for('about') }}" class="brand-logo" aria-label="About Connect Pantry">
+          <img
+            src="{{ url_for('static', filename='images/connect-pantry-logo.png') }}"
+            alt="Connect Pantry — Technology. Food. Community."
+            class="brand-logo-img"
+          >
+        </a>
+      {% endif %}
       <nav>
         {% block nav %}
           <a href="{{ url_for('request_board') }}" data-i18n="nav_request"{% if request.endpoint in ('request_board', 'submit_requests') %} class="active"{% endif %}>Share needs</a>

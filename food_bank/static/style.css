@@ -157,6 +157,43 @@ main.container {
   text-decoration: none;
 }
 
+.brand-logo {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.brand-logo:hover {
+  opacity: 0.92;
+}
+
+.brand-logo-img {
+  display: block;
+  height: 3.25rem;
+  width: auto;
+  max-width: min(12rem, 42vw);
+  object-fit: contain;
+}
+
+.about-header {
+  text-align: center;
+}
+
+.about-logo {
+  display: block;
+  width: min(16rem, 80vw);
+  height: auto;
+  margin: 0 auto 1rem;
+}
+
+.about-card p {
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  color: #334155;
+  margin: 0 0 1.25rem;
+}
+
 nav {
   display: flex;
   align-items: center;
@@ -890,6 +927,18 @@ body.community-layout nav a,
 .community-header .logo,
 .community-header nav a {
   color: #ecfdf5;
+}
+
+body.community-layout .brand-logo,
+.community-header .brand-logo {
+  background: #fff;
+  border-radius: 8px;
+  padding: 0.2rem 0.45rem;
+}
+
+body.community-layout .brand-logo-img,
+.community-header .brand-logo-img {
+  height: 2.75rem;
 }
 
 body.community-layout .logo:hover,
