@@ -1643,11 +1643,25 @@ def _category_counts_for_week(food_bank_id: str, week_key: str) -> dict:
                GROUP BY category_id""",
             (food_bank_id, week_key),
         ).fetchall()
+        expecting_rows = conn.execute(
+            """SELECT cr.category_id, COUNT(DISTINCT cr.client_id) AS client_count
+               FROM client_requests cr
+               INNER JOIN client_week_meta m
+                 ON m.client_id = cr.client_id
+                AND m.food_bank_id = cr.food_bank_id
+                AND m.visit_week = cr.visit_week
+                AND m.expecting_visit = 1
+               WHERE cr.food_bank_id = ? AND cr.visit_week = ?
+               GROUP BY cr.category_id""",
+            (food_bank_id, week_key),
+        ).fetchall()
     counts = {row["category_id"]: int(row["client_count"]) for row in rows}
+    expecting_visit_counts = {row["category_id"]: int(row["client_count"]) for row in expecting_rows}
     return {
         "total_clients": total_clients,
         "expecting_visit_clients": expecting_visit_clients,
         "counts": counts,
+        "expecting_visit_counts": expecting_visit_counts,
     }
 
 
@@ -1656,12 +1670,17 @@ def _metrics_from_counts(
     total_clients: int,
     counts: dict[str, int],
     expecting_visit_clients: int = 0,
+    expecting_visit_counts: dict[str, int] | None = None,
 ) -> list[dict]:
     use_normalized = expecting_visit_clients >= 1
     denominator = expecting_visit_clients if use_normalized else total_clients
+    visit_counts = expecting_visit_counts or {}
     metrics: list[dict] = []
     for category in categories:
-        client_count = counts.get(category["id"], 0)
+        if use_normalized:
+            client_count = visit_counts.get(category["id"], 0)
+        else:
+            client_count = counts.get(category["id"], 0)
         demand_pct = round(100 * client_count / denominator, 1) if denominator else 0.0
         metrics.append(
             {
@@ -1792,6 +1811,7 @@ def compute_weekly_trends(
             prior_counts["total_clients"],
             prior_counts["counts"],
             prior_counts["expecting_visit_clients"],
+            prior_counts["expecting_visit_counts"],
         )
         prior_map = {row["category_id"]: row["demand_pct"] for row in prior_metrics}
     else:
@@ -1811,6 +1831,7 @@ def compute_weekly_trends(
                     hist["total_clients"],
                     hist["counts"],
                     hist["expecting_visit_clients"],
+                    hist["expecting_visit_counts"],
                 )
                 rolling_maps.append({row["category_id"]: row["demand_pct"] for row in hist_metrics})
 
@@ -1819,6 +1840,7 @@ def compute_weekly_trends(
         current["total_clients"],
         current["counts"],
         current["expecting_visit_clients"],
+        current["expecting_visit_counts"],
     )
     demand_normalized = current["expecting_visit_clients"] >= 1
     enriched: list[dict] = []

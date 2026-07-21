@@ -78,8 +78,8 @@
       <thead>
         <tr>
           <th>Category</th>
-          <th>Clients</th>
-          <th>% of clients</th>
+          <th>{% if report.demand_normalized %}Clients expecting visit{% else %}Clients{% endif %}</th>
+          <th>{% if report.demand_normalized %}% of visitors{% else %}% of clients{% endif %}</th>
           <th>vs last week</th>
           <th>vs {{ report.rolling_weeks }}-wk avg</th>
         </tr>
