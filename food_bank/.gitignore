@@ -4,3 +4,4 @@ data/
 
 # Icon download cache (OpenGameArt zips/extracts)
 scripts/_tmp_oga/
+food_bank/tests/__pycache__/
