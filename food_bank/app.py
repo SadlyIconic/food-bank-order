@@ -158,6 +158,7 @@ def community_pledge():
             flash(str(exc), "error")
             return redirect(url_for("community_pledge"))
         session["pledge_thanks_category"] = pledge["category_name"]
+        session["pledge_thanks_category_id"] = pledge["category_id"]
         return redirect(url_for("community_pledge_success"))
 
     return render_template(
@@ -170,6 +171,7 @@ def community_pledge():
 @app.route("/community/pledge/thanks")
 def community_pledge_success():
     category_name = session.pop("pledge_thanks_category", None)
+    category_id = session.pop("pledge_thanks_category_id", None)
     if not category_name:
         return redirect(url_for("community_board"))
     board = store.get_community_needs()
@@ -177,6 +179,7 @@ def community_pledge_success():
     return render_template(
         "community_pledge_success.html",
         category_name=category_name,
+        category_id=category_id or "",
         board=board,
         dropoff_instructions=settings.get("donor_dropoff_instructions", ""),
         dropoff_map_url=settings.get("donor_dropoff_map_url", ""),

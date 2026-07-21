@@ -36,7 +36,11 @@
       <label for="category_id" data-i18n="community_category_col">Category</label>
       <select id="category_id" name="category_id" required>
         {% for item in open_categories %}
-          <option value="{{ item.category_id }}" data-guidance="{{ item.donor_guidance or '' }}">
+          <option
+            value="{{ item.category_id }}"
+            data-planning-id="{{ item.category_id }}"
+            data-supply-level="{{ item.supply_level }}"
+          >
             {{ item.donor_friendly_translation or item.display_name }} — {{ item.supply_label }}
           </option>
         {% endfor %}
@@ -76,7 +80,11 @@
 
     function syncGuidance() {
       if (!select || !guidanceEl) return;
-      const guidance = select.selectedOptions[0]?.dataset.guidance || "";
+      const categoryId = select.value;
+      const fb = window.FoodBankI18n;
+      const guidance = categoryId && fb && typeof fb.planningCategory === "function"
+        ? fb.planningCategory(categoryId, "donorGuidance")
+        : "";
       if (guidance) {
         guidanceEl.textContent = `${guidanceLabel()}: ${guidance}`;
         guidanceEl.hidden = false;

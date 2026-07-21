@@ -13,7 +13,7 @@
 <div class="card success-card">
   <p>
     <span data-i18n="community_category_col">Category</span>:
-    <strong>{{ category_name }}</strong>
+    <strong class="pledge-success-category" data-planning-id="{{ category_id }}">{{ category_name }}</strong>
   </p>
   {% if board.trip.pickup_date or board.trip.trip_name %}
     <p class="meta">
@@ -29,7 +29,7 @@
       <p>{{ dropoff_instructions }}</p>
       {% if dropoff_map_url %}
         <p class="dropoff-map-link">
-          <a href="{{ dropoff_map_url }}" class="btn btn-primary" target="_blank" rel="noopener" data-i18n="community_open_maps">
+          <a href="{{ dropoff_map_url }}" class="btn btn-primary" target="_blank" rel="noopener" data-i18n="community_open_maps_dropoff">
             Open drop-off in Google Maps
           </a>
         </p>
@@ -38,7 +38,7 @@
   {% elif dropoff_map_url %}
     <div class="dropoff-instructions">
       <p class="dropoff-map-link">
-        <a href="{{ dropoff_map_url }}" class="btn btn-primary" target="_blank" rel="noopener" data-i18n="community_open_maps">
+        <a href="{{ dropoff_map_url }}" class="btn btn-primary" target="_blank" rel="noopener" data-i18n="community_open_maps_dropoff">
           Open drop-off in Google Maps
         </a>
       </p>

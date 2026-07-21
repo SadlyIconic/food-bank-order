@@ -121,7 +121,7 @@ const FoodBankI18n = (() => {
       community_pledge_subtitle: "Help your neighborhood food agency by pledging a category from today's needs list.",
       community_back_board: "Back to shortages board",
       community_donor_placeholder: "e.g. Maria",
-      community_anonymous: "Anonymous donor",
+      community_anonymous: "Pledge anonymously",
       community_note_placeholder: "e.g. I'll drop off Saturday morning",
       community_note_private: "Only staff can see your note (not shown on the public board).",
       community_submit_pledge: "Submit pledge",
@@ -140,7 +140,12 @@ const FoodBankI18n = (() => {
       community_examples: "Examples",
       community_donor_guidance: "Donor tip",
       community_open_maps: "Open in Google Maps",
+      community_open_maps_dropoff: "Open drop-off in Google Maps",
       community_category_col: "Category",
+      community_supply_ok: "OK",
+      community_supply_high: "High",
+      community_supply_full: "Full",
+      community_pledge_anonymous: "Pledge anonymously",
     },
     es: {
       app_name: "Pedido del Banco de Alimentos",
@@ -235,7 +240,7 @@ const FoodBankI18n = (() => {
       community_pledge_subtitle: "Ayude a su agencia comprometiéndose con artículos de la lista de escasez de hoy.",
       community_back_board: "Volver al tablero de escasez",
       community_donor_placeholder: "ej. María",
-      community_anonymous: "Donante anónimo",
+      community_anonymous: "Comprometerse anónimamente",
       community_note_placeholder: "ej. Lo dejaré el sábado por la mañana",
       community_note_private: "Solo el personal puede ver su nota (no aparece en el tablero público).",
       community_submit_pledge: "Enviar compromiso",
@@ -244,6 +249,24 @@ const FoodBankI18n = (() => {
       community_status_received: "Recibido",
       community_remaining_hint: "Aún faltan hasta {count} para este artículo.",
       community_option_label: "{name} — faltan {count} {unit}",
+      community_pickup: "Recogida",
+      community_make_pledge: "Hacer un compromiso",
+      community_critically_low: "Críticamente bajo",
+      community_low_supply: "Suministro bajo",
+      community_priority_hint: "Las categorías al inicio de la lista son las más importantes para donar esta semana.",
+      community_demand_signal: "Muchas familias lo solicitaron",
+      community_examples: "Ejemplos",
+      community_donor_guidance: "Consejo para donantes",
+      community_open_maps: "Abrir en Google Maps",
+      community_open_maps_dropoff: "Abrir entrega en Google Maps",
+      community_category_col: "Categoría",
+      community_supply_ok: "OK",
+      community_supply_high: "Alto",
+      community_supply_full: "Lleno",
+      community_pledge_success_title: "¡Gracias por su compromiso!",
+      community_pledge_success_body: "Su compromiso de donación fue registrado. Así puede entregar.",
+      community_dropoff_title: "Instrucciones de entrega",
+      community_donor_name: "Su nombre",
     },
     zh: {
       app_name: "食物银行订购",
@@ -338,6 +361,24 @@ const FoodBankI18n = (() => {
       community_status_received: "已收到",
       community_remaining_hint: "此物品仍缺最多 {count}。",
       community_option_label: "{name} — 仍缺 {count} {unit}",
+      community_pickup: "领取",
+      community_make_pledge: "承诺捐赠",
+      community_critically_low: "严重短缺",
+      community_low_supply: "供应不足",
+      community_priority_hint: "列表顶部的类别是本周最需要捐赠的。",
+      community_demand_signal: "许多家庭需要",
+      community_examples: "示例",
+      community_donor_guidance: "捐赠提示",
+      community_open_maps: "在 Google 地图中打开",
+      community_open_maps_dropoff: "在 Google 地图中打开投递地点",
+      community_category_col: "类别",
+      community_supply_ok: "正常",
+      community_supply_high: "充足",
+      community_supply_full: "已满",
+      community_pledge_success_title: "感谢您的捐赠承诺！",
+      community_pledge_success_body: "您的捐赠承诺已记录。以下是投递方式。",
+      community_dropoff_title: "投递说明",
+      community_donor_name: "您的姓名",
     },
     vi: {
       app_name: "Đặt hàng Ngân hàng Thực phẩm",
@@ -432,6 +473,24 @@ const FoodBankI18n = (() => {
       community_status_received: "Đã nhận",
       community_remaining_hint: "Còn thiếu tối đa {count} cho mặt hàng này.",
       community_option_label: "{name} — còn thiếu {count} {unit}",
+      community_pickup: "Nhận hàng",
+      community_make_pledge: "Cam kết quyên góp",
+      community_critically_low: "Cực kỳ thiếu",
+      community_low_supply: "Sắp hết",
+      community_priority_hint: "Các danh mục đầu danh sách là quan trọng nhất để quyên góp tuần này.",
+      community_demand_signal: "Nhiều gia đình đã yêu cầu",
+      community_examples: "Ví dụ",
+      community_donor_guidance: "Mẹo cho người quyên góp",
+      community_open_maps: "Mở trong Google Maps",
+      community_open_maps_dropoff: "Mở điểm giao hàng trong Google Maps",
+      community_category_col: "Danh mục",
+      community_supply_ok: "Ổn",
+      community_supply_high: "Cao",
+      community_supply_full: "Đầy",
+      community_pledge_success_title: "Cảm ơn bạn đã cam kết!",
+      community_pledge_success_body: "Cam kết quyên góp của bạn đã được ghi nhận. Đây là cách giao hàng.",
+      community_dropoff_title: "Hướng dẫn giao hàng",
+      community_donor_name: "Tên của bạn",
     },
     tl: {
       app_name: "Order sa Food Bank",
@@ -526,6 +585,24 @@ const FoodBankI18n = (() => {
       community_status_received: "Natanggap",
       community_remaining_hint: "Hanggang {count} pa ang bukas para sa item na ito.",
       community_option_label: "{name} — {count} {unit} pa ang bukas",
+      community_pickup: "Pickup",
+      community_make_pledge: "Mag-pledge",
+      community_critically_low: "Kritikal na mababa",
+      community_low_supply: "Mababang supply",
+      community_priority_hint: "Ang mga kategorya sa tuktok ng listahan ang pinakaimportanteng idonate ngayong linggo.",
+      community_demand_signal: "Maraming pamilya ang humiling",
+      community_examples: "Halimbawa",
+      community_donor_guidance: "Tip para sa donor",
+      community_open_maps: "Buksan sa Google Maps",
+      community_open_maps_dropoff: "Buksan ang drop-off sa Google Maps",
+      community_category_col: "Kategorya",
+      community_supply_ok: "OK",
+      community_supply_high: "Mataas",
+      community_supply_full: "Puno",
+      community_pledge_success_title: "Salamat sa iyong pledge!",
+      community_pledge_success_body: "Naitala ang iyong pledge. Narito kung paano mag-drop off.",
+      community_dropoff_title: "Mga tagubilin sa drop-off",
+      community_donor_name: "Iyong pangalan",
     },
     so: {
       app_name: "Dalabka Bangiga Cuntada",
@@ -620,6 +697,24 @@ const FoodBankI18n = (() => {
       community_status_received: "La helay",
       community_remaining_hint: "Ilaa {count} ayaa weli furan alaabtan.",
       community_option_label: "{name} — {count} {unit} ayaa weli furan",
+      community_pickup: "Qaadasho",
+      community_make_pledge: "Ballanqaad bixin",
+      community_critically_low: "Aad u hooseeya",
+      community_low_supply: "Kayd hooseeya",
+      community_priority_hint: "Qaybaha ugu sarreeya liiska ayaa ugu muhiimsan in la bixiyo toddobaadkan.",
+      community_demand_signal: "Qoysas badan ayaa codsaday",
+      community_examples: "Tusaalooyin",
+      community_donor_guidance: "Talo bixiye",
+      community_open_maps: "Ka fur Google Maps",
+      community_open_maps_dropoff: "Ka fur goobta dhigista Google Maps",
+      community_category_col: "Qaybta",
+      community_supply_ok: "OK",
+      community_supply_high: "Sare",
+      community_supply_full: "Buuxa",
+      community_pledge_success_title: "Mahadsanid ballanqaadkaaga!",
+      community_pledge_success_body: "Ballanqaadkaaga waa la diiwaangeliyey. Waa tan sida loo keeno.",
+      community_dropoff_title: "Tilmaamaha dhigista",
+      community_donor_name: "Magacaaga",
     },
   };
 
@@ -696,6 +791,89 @@ const FoodBankI18n = (() => {
       personal_care: { name: "Daryeel shaqsiyeed", description: "Saabuun, macmacaan ilkaha, warqad musqusha, iyo detergent — muhiim guriga." },
       snacks: { name: "Cunto fudud", description: "Biskuut, granola bars, casiir, iyo cunto fudud oo loogu talagalay carruurta." },
     },
+  };
+
+  const DONOR_PLANNING = {
+    en: {
+      produce: { donorName: "Fresh fruits and vegetables", donorGuidance: "Fresh or shelf-stable fruit and vegetables are both welcome." },
+      protein: { donorName: "Meat, fish, eggs, and plant protein", donorGuidance: "Frozen, canned, or fresh protein all help — check expiration dates." },
+      dairy: { donorName: "Milk, cheese, and yogurt", donorGuidance: "Refrigerated items only — please keep cold until drop-off." },
+      grains: { donorName: "Rice, pasta, bread, and cereal", donorGuidance: "Unopened packages preferred; whole-grain options are great." },
+      gluten_free: { donorName: "Gluten-free pantry basics", donorGuidance: "Look for a certified gluten-free label when possible." },
+      canned: { donorName: "Canned goods and shelf-stable meals", donorGuidance: "Pop-top or easy-open cans are especially helpful." },
+      baby: { donorName: "Formula, baby food, and diapers", donorGuidance: "Unopened formula and age-appropriate baby food only." },
+      diapers: { donorName: "Diapers and wipes", donorGuidance: "Any size is OK — unopened packages preferred." },
+      personal_care: { donorName: "Soap, shampoo, and hygiene items", donorGuidance: "Travel-size and full-size items both help families." },
+      snacks: { donorName: "Snacks for kids and adults", donorGuidance: "Nut-free options are appreciated when available." },
+    },
+    es: {
+      produce: { donorName: "Frutas y verduras frescas", donorGuidance: "Frutas y verduras frescas o estables en estantería son bienvenidas." },
+      protein: { donorName: "Carne, pescado, huevos y proteína vegetal", donorGuidance: "Proteína congelada, enlatada o fresca ayuda — revise la fecha de vencimiento." },
+      dairy: { donorName: "Leche, queso y yogur", donorGuidance: "Solo artículos refrigerados — manténgalos fríos hasta la entrega." },
+      grains: { donorName: "Arroz, pasta, pan y cereal", donorGuidance: "Paquetes sin abrir preferidos; opciones integrales son excelentes." },
+      gluten_free: { donorName: "Básicos de despensa sin gluten", donorGuidance: "Busque etiqueta certificada sin gluten cuando sea posible." },
+      canned: { donorName: "Enlatados y comidas estables", donorGuidance: "Latas de fácil apertura son especialmente útiles." },
+      baby: { donorName: "Fórmula, comida para bebé y pañales", donorGuidance: "Solo fórmula sin abrir y comida para bebé apropiada para la edad." },
+      diapers: { donorName: "Pañales y toallitas", donorGuidance: "Cualquier talla está bien — paquetes sin abrir preferidos." },
+      personal_care: { donorName: "Jabón, champú e higiene", donorGuidance: "Tamaños de viaje y completos ayudan a las familias." },
+      snacks: { donorName: "Snacks para niños y adultos", donorGuidance: "Opciones sin nueces son muy apreciadas cuando estén disponibles." },
+    },
+    zh: {
+      produce: { donorName: "新鲜水果和蔬菜", donorGuidance: "新鲜或耐储存的水果和蔬菜都可以。" },
+      protein: { donorName: "肉、鱼、鸡蛋和植物蛋白", donorGuidance: "冷冻、罐头或新鲜蛋白质都可以——请检查保质期。" },
+      dairy: { donorName: "牛奶、奶酪和酸奶", donorGuidance: "仅限冷藏物品——送达前请保持低温。" },
+      grains: { donorName: "大米、面条、面包和麦片", donorGuidance: "优先未开封包装；全谷物更好。" },
+      gluten_free: { donorName: "无麸质 pantry 基础食品", donorGuidance: "尽量选择有无麸质认证标签的产品。" },
+      canned: { donorName: "罐头和耐储餐食", donorGuidance: "易拉罐或易开罐头尤其有帮助。" },
+      baby: { donorName: "配方奶粉、婴儿食品和尿布", donorGuidance: "仅限未开封配方奶粉和适龄婴儿食品。" },
+      diapers: { donorName: "尿布和湿巾", donorGuidance: "任何尺码都可以——优先未开封包装。" },
+      personal_care: { donorName: "肥皂、洗发水和卫生用品", donorGuidance: "旅行装和正装都能帮助家庭。" },
+      snacks: { donorName: "儿童和成人零食", donorGuidance: "如有无坚果选项将非常感谢。" },
+    },
+    vi: {
+      produce: { donorName: "Trái cây và rau tươi", donorGuidance: "Trái cây và rau tươi hoặc bền đều được chào đón." },
+      protein: { donorName: "Thịt, cá, trứng và đạm thực vật", donorGuidance: "Đạm đông lạnh, hộp hoặc tươi đều giúp ích — kiểm tra hạn sử dụng." },
+      dairy: { donorName: "Sữa, phô mai và sữa chua", donorGuidance: "Chỉ mặt hàng cần bảo quản lạnh — giữ lạnh đến khi giao." },
+      grains: { donorName: "Gạo, mì, bánh mì và ngũ cốc", donorGuidance: "Ưu tiên gói chưa mở; ngũ cốc nguyên hạt rất tốt." },
+      gluten_free: { donorName: "Thực phẩm cơ bản không gluten", donorGuidance: "Tìm nhãn chứng nhận không gluten khi có thể." },
+      canned: { donorName: "Đồ hộp và bữa ăn bền", donorGuidance: "Hộp dễ mở đặc biệt hữu ích." },
+      baby: { donorName: "Sữa công thức, thức ăn em bé và tã", donorGuidance: "Chỉ sữa công thức chưa mở và thức ăn phù hợp độ tuổi." },
+      diapers: { donorName: "Tã và khăn lau", donorGuidance: "Mọi size đều được — ưu tiên gói chưa mở." },
+      personal_care: { donorName: "Xà phòng, dầu gội và vệ sinh", donorGuidance: "Size du lịch và size đầy đủ đều giúp gia đình." },
+      snacks: { donorName: "Đồ ăn vặt cho trẻ và người lớn", donorGuidance: "Lựa chọn không hạt được đánh giá cao khi có." },
+    },
+    tl: {
+      produce: { donorName: "Sariwang prutas at gulay", donorGuidance: "Sariwa o shelf-stable na prutas at gulay ay welcome." },
+      protein: { donorName: "Karne, isda, itlog, at plant protein", donorGuidance: "Frozen, de-lata, o sariwang protina ay tumutulong — tingnan ang expiration." },
+      dairy: { donorName: "Gatas, keso, at yogurt", donorGuidance: "Refrigerated items lang — panatilihing malamig hanggang drop-off." },
+      grains: { donorName: "Bigas, pasta, tinapay, at cereal", donorGuidance: "Hindi pa nabuksan na pakete ang mas mainam; whole-grain ay maganda." },
+      gluten_free: { donorName: "Gluten-free na pantry basics", donorGuidance: "Hanapin ang certified gluten-free label kung maaari." },
+      canned: { donorName: "De-lata at shelf-stable na pagkain", donorGuidance: "Pop-top o madaling buksan na lata ay lalo na kapaki-pakinabang." },
+      baby: { donorName: "Formula, pagkain ng sanggol, at lampin", donorGuidance: "Hindi pa nabuksan na formula at angkop na pagkain ng sanggol lang." },
+      diapers: { donorName: "Lampin at wipes", donorGuidance: "Anumang size ay OK — hindi pa nabuksan na pakete ang mas mainam." },
+      personal_care: { donorName: "Sabon, shampoo, at hygiene items", donorGuidance: "Travel-size at full-size ay parehong tumutulong sa pamilya." },
+      snacks: { donorName: "Meryenda para sa bata at matanda", donorGuidance: "Nut-free na opsyon ay pinapahalagahan kapag available." },
+    },
+    so: {
+      produce: { donorName: "Miraha iyo khudaar cusub", donorGuidance: "Miraha iyo khudaar cusub ama shelf-stable labaduba waa la soo dhaweynayaa." },
+      protein: { donorName: "Hilib, kalluun, ukun, iyo borotiin dhirta", donorGuidance: "Borotiin barafaysan, qasac, ama cusub way caawiyaan — hubi taariikhda dhicitaanka." },
+      dairy: { donorName: "Caano, jiis, iyo yogurt", donorGuidance: "Alaab qaboojiyaha lagu kaydiyo oo keliya — qabow ilaa intaad keenayso." },
+      grains: { donorName: "Bariis, baasto, rooti, iyo hadhuudh", donorGuidance: "Baakadaha aan la furin ayaa la doorbidayaa; whole-grain waa fiican." },
+      gluten_free: { donorName: "Cuntooyinka bakhaar ee aan gluten lahayn", donorGuidance: "Raadi sumadda gluten-free ee shahaadaysan marka ay suurtagal tahay." },
+      canned: { donorName: "Qasac iyo cuntooyin shelf-stable", donorGuidance: "Qasac fudud oo la furi karo ayaa si gaar ah wax u tara." },
+      baby: { donorName: "Caano budada ah, cunto ilmo, iyo xafaayad", donorGuidance: "Caano budada ah oo aan la furin iyo cunto ilmo oo da'da ku habboon oo keliya." },
+      diapers: { donorName: "Xafaayad iyo maacun", donorGuidance: "Cabbir kasta waa OK — baakadaha aan la furin ayaa la doorbidayaa." },
+      personal_care: { donorName: "Saabuun, shampoo, iyo nadaafad", donorGuidance: "Cabbir safar iyo cabbir buuxa labaduba waxay caawiyaan qoysaska." },
+      snacks: { donorName: "Cunto fudud carruurta iyo dadka waaweyn", donorGuidance: "Xulashooyin aan lahayn miro ayaa la qadarinayaa marka la heli karo." },
+    },
+  };
+
+  const SUPPLY_LEVEL_I18N = {
+    critically_low: "community_critically_low",
+    low: "community_low_supply",
+    ok: "community_supply_ok",
+    high: "community_supply_high",
+    full: "community_supply_full",
   };
 
   const EXAMPLE_EXTRAS = {
@@ -798,7 +976,15 @@ const FoodBankI18n = (() => {
 
   function planningCategory(id, field = "name") {
     const lang = getLang();
+    if (field === "donorName" || field === "donorGuidance") {
+      return DONOR_PLANNING[lang]?.[id]?.[field] ?? DONOR_PLANNING.en?.[id]?.[field] ?? "";
+    }
     return PLANNING[lang]?.[id]?.[field] ?? PLANNING.en[id]?.[field] ?? id;
+  }
+
+  function supplyLevelLabel(level) {
+    const key = SUPPLY_LEVEL_I18N[level];
+    return key ? t(key) : level;
   }
 
   function exampleItemLabel(item) {
@@ -855,7 +1041,43 @@ const FoodBankI18n = (() => {
         tab.textContent = categoryName(tab.dataset.category);
       }
     });
+    applyCommunityContent();
     updateLangButtons();
+  }
+
+  function applyCommunityContent() {
+    document.querySelectorAll(".community-need-name[data-planning-id]").forEach((el) => {
+      el.textContent = planningCategory(el.dataset.planningId, "donorName");
+    });
+    document.querySelectorAll(".community-need-desc[data-planning-id]").forEach((el) => {
+      el.textContent = planningCategory(el.dataset.planningId, "description");
+    });
+    document.querySelectorAll(".community-need-guidance-text[data-planning-id]").forEach((el) => {
+      el.textContent = planningCategory(el.dataset.planningId, "donorGuidance");
+    });
+    document.querySelectorAll(".pledge-category-name[data-planning-id]").forEach((el) => {
+      el.textContent = planningCategory(el.dataset.planningId, "donorName");
+    });
+    document.querySelectorAll(".pledge-success-category[data-planning-id]").forEach((el) => {
+      el.textContent = planningCategory(el.dataset.planningId, "donorName");
+    });
+    document.querySelectorAll(".community-example-list[data-items]").forEach((el) => {
+      let items = [];
+      try {
+        items = JSON.parse(el.dataset.items || "[]");
+      } catch (_err) {
+        items = [];
+      }
+      el.textContent = items.map((item) => exampleItemLabel(item)).join(", ");
+    });
+    const select = document.getElementById("category_id");
+    if (select) {
+      select.querySelectorAll("option[data-planning-id]").forEach((opt) => {
+        const name = planningCategory(opt.dataset.planningId, "donorName");
+        const level = supplyLevelLabel(opt.dataset.supplyLevel || "");
+        opt.textContent = level ? `${name} — ${level}` : name;
+      });
+    }
   }
 
   function updateLangButtons() {
@@ -902,6 +1124,7 @@ const FoodBankI18n = (() => {
     categoryName,
     unitName,
     planningCategory,
+    supplyLevelLabel,
     exampleItemLabel,
     applyPage,
     init,

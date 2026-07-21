@@ -69,19 +69,20 @@
             {% if item.demand_signal %}
               <span class="badge" data-i18n="community_demand_signal">Many families requested</span>
             {% endif %}
-            <h3 class="community-need-name">{{ item.donor_friendly_translation or item.display_name }}</h3>
+            <h3 class="community-need-name" data-planning-id="{{ item.category_id }}" data-planning-field="donorName">{{ item.donor_friendly_translation or item.display_name }}</h3>
             {% if item.description %}
-              <p class="meta community-need-desc">{{ item.description }}</p>
+              <p class="meta community-need-desc" data-planning-id="{{ item.category_id }}" data-planning-field="description">{{ item.description }}</p>
             {% endif %}
             {% if item.donor_guidance %}
               <p class="meta community-need-guidance">
-                <span data-i18n="community_donor_guidance">Donor tip</span>: {{ item.donor_guidance }}
+                <span data-i18n="community_donor_guidance">Donor tip</span>:
+                <span class="community-need-guidance-text" data-planning-id="{{ item.category_id }}">{{ item.donor_guidance }}</span>
               </p>
             {% endif %}
             {% if item.example_items %}
               <p class="meta community-need-examples">
                 <span data-i18n="community_examples">Examples</span>:
-                {% for ex in item.example_items[:4] %}{{ ex.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+                <span class="community-example-list" data-items="{{ item.example_items[:4] | tojson | e }}"></span>
               </p>
             {% endif %}
           </div>
@@ -118,7 +119,7 @@
             {% for pledge in board.pledges %}
               <tr data-category-id="{{ pledge.category_id }}" class="{% if pledge.status == 'received' %}row-received{% endif %}">
                 <td>{{ pledge.donor_display_name }}</td>
-                <td><span class="pledge-category-name">{{ pledge.category_name }}</span></td>
+                <td><span class="pledge-category-name" data-planning-id="{{ pledge.category_id }}">{{ pledge.category_name }}</span></td>
                 <td>
                   {% if pledge.status == 'received' %}
                     <span class="badge badge-status-received" data-i18n="community_status_received">Received</span>
