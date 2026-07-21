@@ -76,6 +76,13 @@
       <input type="number" id="high_demand_threshold" name="high_demand_threshold" min="20" max="90" value="{{ settings.high_demand_threshold }}">
       <p class="form-hint">Categories above this demand % stay in the FLL plan even when supply is high.</p>
     </div>
+    <div class="form-group">
+      <label class="checkbox-label">
+        <input type="checkbox" name="use_seasonal_bumps" id="use_seasonal_bumps"{% if settings.use_seasonal_bumps %} checked{% endif %}>
+        Apply seasonal bumps to forecast and priority scores
+      </label>
+      <p class="form-hint">Uses <code>seasonal_bumps.json</code> for month-based adjustments. Staff can disable without editing the file.</p>
+    </div>
     <div class="form-actions">
       <button type="submit" class="btn btn-primary">Save settings</button>
       <a href="{{ url_for('admin_trends') }}" class="btn btn-muted">Back to trends</a>

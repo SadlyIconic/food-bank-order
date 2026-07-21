@@ -245,6 +245,42 @@ main.container {
   margin: 0 0 1rem;
 }
 
+.forecast-banner,
+.forecast-card {
+  border-left: 4px solid #6366f1;
+}
+
+.forecast-headline {
+  margin: 0 0 0.35rem;
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+
+.forecast-disclaimer {
+  margin: 0;
+}
+
+.mix-headline {
+  margin: 0 0 0.75rem;
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+
+.mix-breakdown {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.bundle-suggestions .bundle-suggestion + .bundle-suggestion {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.bundle-suggestion p {
+  margin: 0.35rem 0 0;
+}
+
 .community-dropoff-banner,
 .dropoff-instructions {
   margin-top: 1rem;

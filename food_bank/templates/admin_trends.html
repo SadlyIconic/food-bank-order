@@ -71,6 +71,39 @@
 </div>
 {% endif %}
 
+{% if forecast %}
+<section class="card forecast-card">
+  <h2>Next week forecast (estimate)</h2>
+  <p class="meta forecast-disclaimer">
+    For {{ forecast.week_key }}{% if forecast.use_seasonal_bumps %} — includes seasonal adjustment for month {{ forecast.forecast_month }}{% endif %}. Not a guarantee.
+  </p>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th>Rolling avg</th>
+          <th>Seasonal bump</th>
+          <th>Forecast %</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in forecast.categories %}
+        {% if row.forecast_pct is not none %}
+        <tr>
+          <td>{{ row.display_name }}</td>
+          <td>{% if row.base_pct is not none %}{{ row.base_pct }}%{% else %}—{% endif %}</td>
+          <td>{% if row.seasonal_boost %}+{{ row.seasonal_boost }}{% else %}—{% endif %}</td>
+          <td>{{ row.forecast_pct }}%</td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
 <section class="card">
   <h2>Category breakdown</h2>
   <div class="table-wrap">

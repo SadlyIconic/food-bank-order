@@ -11,6 +11,8 @@ BASE_DIR = Path(__file__).resolve().parent
 ITEMS_FILE = BASE_DIR / "items.json"
 CATEGORIES_FILE = BASE_DIR / "categories.json"
 FLL_PALLETS_FILE = BASE_DIR / "fll_pallets.json"
+SEASONAL_BUMPS_FILE = BASE_DIR / "seasonal_bumps.json"
+BUNDLE_RULES_FILE = BASE_DIR / "bundle_rules.json"
 
 # Legacy JSON paths (migrated on first init)
 LEGACY_ORDERS_FILE = BASE_DIR / "orders.json"
@@ -40,6 +42,11 @@ STORAGE_TYPE_LABELS = {
     "refrigerated": "Refrigerated",
     "frozen": "Frozen",
 }
+STORAGE_MIX_LABELS = {
+    "refrigerated": "cooler",
+    "shelf": "shelf",
+    "frozen": "frozen",
+}
 CATEGORY_PRIORITY = {
     "critically_low": 4,
     "low": 3,
@@ -63,6 +70,7 @@ DEFAULT_APP_SETTINGS = {
     "agency_hours": "",
     "agency_about_extra": "",
     "donor_dropoff_map_url": "",
+    "use_seasonal_bumps": True,
 }
 
 DEFAULT_FOOD_BANK_ID = "default"
@@ -1417,6 +1425,11 @@ def prior_week_key(week_key: str) -> str:
     return visit_week_key(prior)
 
 
+def next_week_key(week_key: str) -> str:
+    nxt = _week_key_to_date(week_key) + timedelta(days=7)
+    return visit_week_key(nxt)
+
+
 def rolling_week_keys(week_key: str, count: int) -> list[str]:
     keys: list[str] = []
     current = week_key
@@ -1436,6 +1449,10 @@ def get_app_settings() -> dict:
     settings["high_demand_threshold"] = max(
         20, min(90, int(settings.get("high_demand_threshold", 50) or 50))
     )
+    if "use_seasonal_bumps" not in settings:
+        settings["use_seasonal_bumps"] = True
+    else:
+        settings["use_seasonal_bumps"] = bool(settings["use_seasonal_bumps"])
     return settings
 
 
@@ -1469,6 +1486,8 @@ def save_app_settings(settings: dict) -> dict:
     if "donor_dropoff_map_url" in settings:
         map_url = str(settings["donor_dropoff_map_url"]).strip()[:500]
         current["donor_dropoff_map_url"] = map_url if map_url.startswith("https://") else ""
+    if "use_seasonal_bumps" in settings:
+        current["use_seasonal_bumps"] = bool(settings["use_seasonal_bumps"])
     with get_conn() as conn:
         _kv_set(conn, "app_settings", current)
         conn.commit()
@@ -1891,8 +1910,200 @@ def get_fll_pallets() -> dict:
     return _read_json(FLL_PALLETS_FILE, {})
 
 
-def _priority_score(demand_pct: float, supply_urgency: int, vs_rolling_val: float) -> int:
-    raw = demand_pct + (supply_urgency * 15) + max(0.0, vs_rolling_val)
+def get_seasonal_bumps() -> dict:
+    raw = _read_json(SEASONAL_BUMPS_FILE, {})
+    normalized: dict[str, dict[str, float]] = {}
+    for month_key, categories in raw.items():
+        if not isinstance(categories, dict):
+            continue
+        month = str(month_key)
+        normalized[month] = {
+            str(cat_id): float(value)
+            for cat_id, value in categories.items()
+            if _is_number(value)
+        }
+    return normalized
+
+
+def get_bundle_rules() -> list[dict]:
+    raw = _read_json(BUNDLE_RULES_FILE, [])
+    if isinstance(raw, dict):
+        return raw.get("rules", [])
+    return raw if isinstance(raw, list) else []
+
+
+def _is_number(value) -> bool:
+    try:
+        float(value)
+        return True
+    except (TypeError, ValueError):
+        return False
+
+
+def _seasonal_bump_for_month(month: int, category_id: str, *, enabled: bool = True) -> float:
+    if not enabled:
+        return 0.0
+    bumps = get_seasonal_bumps().get(str(month), {})
+    return float(bumps.get(category_id, 0) or 0)
+
+
+def _forecast_headline(categories: list[dict], limit: int = 3) -> str:
+    ranked = [
+        row for row in categories
+        if row.get("forecast_pct") is not None and row["forecast_pct"] > 0
+    ]
+    ranked.sort(key=lambda row: row["forecast_pct"], reverse=True)
+    if not ranked:
+        return "Next week forecast: not enough history yet (estimate)."
+    parts = [f"{row['display_name']} ~{row['forecast_pct']:.0f}%" for row in ranked[:limit]]
+    return "Forecast next week: " + ", ".join(parts)
+
+
+def compute_week_forecast(
+    food_bank_id: str | None = None,
+    week_key: str | None = None,
+) -> dict:
+    """Estimate demand % for the week after ``week_key`` using rolling avg + seasonal bumps."""
+    settings = get_app_settings()
+    fb_id = food_bank_id or settings["food_bank_id"]
+    source_wk = week_key or visit_week_key()
+    target_wk = next_week_key(source_wk)
+    target_month = _week_key_to_date(target_wk).month
+    use_bumps = bool(settings.get("use_seasonal_bumps", True))
+
+    trends = compute_weekly_trends(fb_id, source_wk)
+    categories: list[dict] = []
+    for row in trends["categories"]:
+        base = row.get("rolling_avg_pct")
+        seasonal = _seasonal_bump_for_month(target_month, row["category_id"], enabled=use_bumps)
+        if base is not None:
+            forecast_pct = round(float(base) + seasonal, 1)
+            low_confidence = False
+        else:
+            forecast_pct = None
+            low_confidence = True
+        categories.append(
+            {
+                "category_id": row["category_id"],
+                "display_name": row["display_name"],
+                "base_pct": base,
+                "seasonal_boost": seasonal,
+                "forecast_pct": forecast_pct,
+                "low_confidence": low_confidence,
+            }
+        )
+
+    return {
+        "food_bank_id": fb_id,
+        "source_week_key": source_wk,
+        "week_key": target_wk,
+        "forecast_month": target_month,
+        "use_seasonal_bumps": use_bumps,
+        "computed_at": _utc_now(),
+        "categories": categories,
+        "headline": _forecast_headline(categories),
+    }
+
+
+def _pallet_reason(pallet: dict, categories_out: list[dict]) -> str:
+    reasons: list[str] = []
+    for cat_row in categories_out:
+        if cat_row["category_id"] not in pallet.get("planning_categories", []):
+            continue
+        if cat_row["priority_score"] <= 0:
+            continue
+        reasons.append(
+            f"{cat_row['display_name']} {cat_row['supply_label'].lower()}; "
+            f"{cat_row['demand_pct']:.0f}% client demand"
+        )
+    return "; ".join(reasons[:2]) or "Priority gap"
+
+
+def _recommended_mix(fll_recommendations: list[dict]) -> dict:
+    by_storage: dict[str, int] = {}
+    total_pallets = 0
+    for rec in fll_recommendations:
+        storage = rec.get("storage", "shelf")
+        qty = int(rec.get("suggested_pallets", 0) or 0)
+        by_storage[storage] = by_storage.get(storage, 0) + qty
+        total_pallets += qty
+
+    mix_parts = [
+        f"{count} {STORAGE_MIX_LABELS.get(storage, storage)}"
+        for storage, count in sorted(by_storage.items(), key=lambda item: item[0])
+    ]
+    if total_pallets:
+        headline = f"Recommend {total_pallets} pallet{'s' if total_pallets != 1 else ''}: " + ", ".join(mix_parts)
+    else:
+        headline = "No pallets recommended this week."
+
+    return {
+        "total_pallets": total_pallets,
+        "by_storage": by_storage,
+        "headline": headline,
+    }
+
+
+def _also_consider_pallets(
+    pallet_scores: list[dict],
+    fll_recommendations: list[dict],
+    categories_out: list[dict],
+    *,
+    limit: int = 2,
+) -> list[dict]:
+    selected_ids = {rec["pallet_id"] for rec in fll_recommendations}
+    extras: list[dict] = []
+    for pallet in pallet_scores:
+        if pallet["pallet_id"] in selected_ids:
+            continue
+        if pallet["priority_score"] <= 0:
+            continue
+        extras.append(
+            {
+                "pallet_id": pallet["pallet_id"],
+                "display_name": pallet["display_name"],
+                "storage": pallet["storage"],
+                "priority_score": pallet["priority_score"],
+                "reason": _pallet_reason(pallet, categories_out),
+            }
+        )
+        if len(extras) >= limit:
+            break
+    return extras
+
+
+def _evaluate_bundle_suggestions(cat_levels: dict[str, str]) -> list[dict]:
+    pallets = get_fll_pallets()
+    suggestions: list[dict] = []
+    for rule in get_bundle_rules():
+        category_ids = rule.get("category_ids") or []
+        supply_levels = rule.get("supply_levels") or ["critically_low", "low"]
+        if not category_ids:
+            continue
+        if not all(cat_levels.get(cid, "ok") in supply_levels for cid in category_ids):
+            continue
+        pallet_ids = rule.get("pallet_ids") or []
+        pallet_names = [pallets.get(pid, {}).get("display_name", pid) for pid in pallet_ids]
+        suggestions.append(
+            {
+                "id": rule.get("id", ""),
+                "label": rule.get("label", "Bundle suggestion"),
+                "message": rule.get("message", ""),
+                "category_ids": category_ids,
+                "pallet_ids": pallet_ids,
+                "pallet_names": pallet_names,
+            }
+        )
+    return suggestions
+
+
+def _priority_score(
+    demand_pct: float,
+    supply_urgency: int,
+    vs_rolling_val: float,
+    seasonal_boost: float = 0.0,
+) -> int:
+    raw = demand_pct + (supply_urgency * 15) + max(0.0, vs_rolling_val) + max(0.0, seasonal_boost)
     return int(round(raw))
 
 
@@ -1912,6 +2123,9 @@ def compute_order_plan(
     storage_levels = thresholds.get("storage", {})
     pallets = get_fll_pallets()
     trend_map = {row["category_id"]: row for row in trends["categories"]}
+    plan_month = _week_key_to_date(wk).month
+    use_seasonal_bumps = bool(settings.get("use_seasonal_bumps", True))
+    forecast = compute_week_forecast(fb_id, wk)
 
     categories_out: list[dict] = []
     for cat in get_planning_categories(fb_id, active_only=True):
@@ -1922,11 +2136,12 @@ def compute_order_plan(
         vs_rolling_val = float(vs_rolling) if vs_rolling is not None else 0.0
         supply_level = cat_levels.get(cid, "ok")
         supply_urgency = CATEGORY_PRIORITY.get(supply_level, 2)
+        seasonal_boost = _seasonal_bump_for_month(plan_month, cid, enabled=use_seasonal_bumps)
         skipped = supply_level in ("high", "full") and demand_pct <= high_demand_threshold
         priority_score = (
             0
             if skipped
-            else _priority_score(demand_pct, supply_urgency, vs_rolling_val)
+            else _priority_score(demand_pct, supply_urgency, vs_rolling_val, seasonal_boost)
         )
         storage_type = PLANNING_CATEGORY_STORAGE.get(cid, "shelf")
         categories_out.append(
@@ -1940,6 +2155,7 @@ def compute_order_plan(
                 "supply_label": STAFF_THRESHOLD_LABELS.get(supply_level, supply_level),
                 "supply_urgency": supply_urgency,
                 "priority_score": priority_score,
+                "seasonal_boost": seasonal_boost,
                 "storage_type": storage_type,
                 "storage_level": storage_levels.get(storage_type, "ok"),
                 "skipped": skipped,
@@ -1981,16 +2197,6 @@ def compute_order_plan(
         suggested = min(pallet["default_pallets"], max_pallets - total_pallets)
         if suggested <= 0:
             continue
-        reasons: list[str] = []
-        for cat_row in categories_out:
-            if cat_row["category_id"] not in pallet["planning_categories"]:
-                continue
-            if cat_row["priority_score"] <= 0:
-                continue
-            reasons.append(
-                f"{cat_row['display_name']} {cat_row['supply_label'].lower()}; "
-                f"{cat_row['demand_pct']:.0f}% client demand"
-            )
         fll_recommendations.append(
             {
                 "pallet_id": pallet["pallet_id"],
@@ -1999,7 +2205,7 @@ def compute_order_plan(
                 "suggested_pallets": suggested,
                 "priority_score": pallet["priority_score"],
                 "storage": pallet["storage"],
-                "reason": "; ".join(reasons[:2]) or "Priority gap",
+                "reason": _pallet_reason(pallet, categories_out),
             }
         )
         total_pallets += suggested
@@ -2062,12 +2268,25 @@ def compute_order_plan(
             f"{cooler_count} refrigerated pallets recommended — check cooler capacity."
         )
 
+    recommended_mix = _recommended_mix(fll_recommendations)
+    also_consider = _also_consider_pallets(
+        pallet_scores,
+        fll_recommendations,
+        categories_out,
+    )
+    bundle_suggestions = _evaluate_bundle_suggestions(cat_levels)
+
     return {
         "food_bank_id": fb_id,
         "week_key": wk,
         "computed_at": _utc_now(),
         "max_fll_pallets": max_pallets,
         "total_suggested_pallets": total_pallets,
+        "recommended_mix": recommended_mix,
+        "also_consider": also_consider,
+        "bundle_suggestions": bundle_suggestions,
+        "forecast": forecast,
+        "use_seasonal_bumps": use_seasonal_bumps,
         "categories": categories_out,
         "fll_recommendations": fll_recommendations,
         "donor_candidates": donor_candidates,

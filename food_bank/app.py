@@ -217,10 +217,12 @@ def admin_trends():
     week_key = request.args.get("week", store.visit_week_key()).strip() or store.visit_week_key()
     report = store.compute_weekly_trends(settings["food_bank_id"], week_key)
     snapshot = store.get_trend_snapshot(settings["food_bank_id"], week_key)
+    forecast = store.compute_week_forecast(settings["food_bank_id"], week_key)
     return render_template(
         "admin_trends.html",
         report=report,
         snapshot=snapshot,
+        forecast=forecast,
         settings=settings,
         week_key=week_key,
     )
@@ -297,6 +299,7 @@ def admin_settings():
                 "agency_hours": request.form.get("agency_hours", ""),
                 "agency_about_extra": request.form.get("agency_about_extra", ""),
                 "donor_dropoff_map_url": request.form.get("donor_dropoff_map_url", ""),
+                "use_seasonal_bumps": request.form.get("use_seasonal_bumps") == "on",
             }
         )
         store.save_trip_settings(
@@ -380,6 +383,26 @@ def admin_order_export():
                 rec["display_name"],
                 rec["suggested_pallets"],
                 rec["reason"],
+            ]
+        )
+    for rec in plan.get("also_consider", []):
+        writer.writerow(
+            [
+                "also_consider",
+                week_key,
+                rec["display_name"],
+                rec["priority_score"],
+                rec["reason"],
+            ]
+        )
+    if plan.get("recommended_mix"):
+        writer.writerow(
+            [
+                "recommended_mix",
+                week_key,
+                "summary",
+                plan["recommended_mix"]["total_pallets"],
+                plan["recommended_mix"]["headline"],
             ]
         )
     for row in plan["categories"]:

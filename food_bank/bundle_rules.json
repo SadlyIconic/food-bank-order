@@ -1,0 +1,10 @@
+[
+  {
+    "id": "cooler_duo",
+    "label": "Cooler bundle",
+    "message": "Produce and dairy are both low — consider ordering both cooler pallets.",
+    "category_ids": ["produce", "dairy"],
+    "supply_levels": ["critically_low", "low"],
+    "pallet_ids": ["produce_mix", "dairy_cooler"]
+  }
+]

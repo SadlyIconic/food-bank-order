@@ -1,0 +1,22 @@
+{
+  "1": {
+    "diapers": 8,
+    "produce": 5
+  },
+  "7": {
+    "produce": 10,
+    "snacks": 6
+  },
+  "9": {
+    "diapers": 12,
+    "grains": 5
+  },
+  "11": {
+    "protein": 8,
+    "personal_care": 6
+  },
+  "12": {
+    "grains": 8,
+    "canned": 6
+  }
+}

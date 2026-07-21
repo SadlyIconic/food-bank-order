@@ -10,7 +10,8 @@ Clients tap planning categories (Produce, Protein, Gluten-Free Staples, Diapers,
 - **Weekly SQL aggregation** — `COUNT(DISTINCT client_id)` by category with ISO week keys
 - **Trend dashboard** — `/admin/trends` with headline insights, comparison table, week selector
 - **Supply levels** — `/admin/supply` five-level assessment per planning category + storage limits
-- **Monday order worksheet** — `/admin/order` FLL pallet recommendations (6–8 cap) from demand + supply gap engine
+- **Monday order worksheet** — `/admin/order` FLL pallet recommendations (6–8 cap) from demand + supply gap engine, plus recommended mix summary, also-consider list, and bundle hints
+- **Next-week forecast** — Rolling average + optional seasonal bumps (`seasonal_bumps.json`) on trends and order pages
 - **Category donor board** — `/community` with category pledges (no PII, no SKU math)
 - **CSV export** — Trends and FLL worksheet downloads for manual Food Lifeline ordering
 - **Rolling averages** — Configurable N-week comparison from saved snapshots
@@ -50,12 +51,12 @@ For production on Render, set `TURSO_*` variables (see `docs/TURSO_SETUP.md`). F
 ### Staff workflow (Monday Food Lifeline prep)
 
 1. **Share the client board** — Send `/` to clients during the week (QR code, kiosk, SMS).
-2. **Review trends** — Open `/admin/trends`. Compare % of clients per category vs last week and rolling average.
+2. **Review trends** — Open `/admin/trends`. Compare % of clients per category vs last week, rolling average, and next-week forecast estimate.
 3. **Set supply levels** — `/admin/supply`: rate each planning category (critically low → full) and storage areas.
-4. **Monday order worksheet** — `/admin/order`: review FLL pallet checklist (max 6–8), category gap table, donor queue preview. Export CSV.
+4. **Monday order worksheet** — `/admin/order`: review recommended mix, FLL pallet checklist (max 6–8), also-consider pallets, bundle suggestions, category gap table, donor queue preview. Export CSV.
 5. **Place FLL order manually** — Use the worksheet alongside your Food Lifeline portal (no API integration).
 6. **Broadcast donor gaps** — `/admin/community` or one-click **Publish donor needs** from the order page. Share `/community` with neighborhood donors.
-7. **Adjust settings** — `/admin/settings` for agency name, rolling window, FLL pallet cap, and high-demand threshold.
+7. **Adjust settings** — `/admin/settings` for agency name, rolling window, FLL pallet cap, high-demand threshold, seasonal bumps toggle, and donor/About content.
 
 Legacy shop and cart URLs redirect to the client request board.
 
@@ -77,11 +78,14 @@ Legacy shop and cart URLs redirect to the client request board.
 |--------------|---------|
 | `categories.json` | Seed planning buckets (Produce, Protein, Diapers, …) |
 | `fll_pallets.json` | Food Lifeline pallet names mapped to planning categories |
+| `seasonal_bumps.json` | Month → category extra percentage points for forecast/priority |
+| `bundle_rules.json` | Cooler/shelf bundle hints when multiple categories are low |
+| `client_week_meta` | Anonymous “expecting visit this week?” flag per client/week |
 | `categories` table | Active planning categories per `food_bank_id` |
 | `client_requests` | One row per category tap; `visit_week` = ISO week key |
 | `trend_snapshots` | Saved weekly metrics for WoW / rolling-average comparisons |
 | `kv_store` `staff_thresholds` | Supply levels per planning category + storage |
-| `kv_store` `app_settings` | Agency name, rolling window, FLL pallet cap |
+| `kv_store` `app_settings` | Agency name, rolling window, FLL pallet cap, seasonal bumps toggle |
 | `category_pledges` | Donor pledges by planning category |
 | `items.json` | Legacy SKU catalog (example items enrichment) |
 | Turso / `data/food_bank.db` | Persistence |

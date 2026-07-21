@@ -32,6 +32,15 @@
 </div>
 {% endif %}
 
+{% if plan.forecast %}
+<div class="card forecast-banner">
+  <p class="forecast-headline">{{ plan.forecast.headline }}</p>
+  <p class="meta forecast-disclaimer">
+    Estimate for {{ plan.forecast.week_key }} based on rolling average{% if plan.use_seasonal_bumps %} and seasonal adjustment for month {{ plan.forecast.forecast_month }}{% endif %} — not a guarantee.
+  </p>
+</div>
+{% endif %}
+
 {% if plan.storage_warnings %}
 <div class="card storage-blocked-notice">
   <h2 class="card-title">Storage heads-up</h2>
@@ -40,6 +49,21 @@
       <li>{{ warning }}</li>
     {% endfor %}
   </ul>
+</div>
+{% endif %}
+
+{% if plan.bundle_suggestions %}
+<div class="card bundle-suggestions">
+  <h2 class="card-title">Bundle suggestions</h2>
+  {% for bundle in plan.bundle_suggestions %}
+    <div class="bundle-suggestion">
+      <strong>{{ bundle.label }}</strong>
+      <p>{{ bundle.message }}</p>
+      {% if bundle.pallet_names %}
+        <p class="meta">Related pallets: {{ bundle.pallet_names | join(', ') }}</p>
+      {% endif %}
+    </div>
+  {% endfor %}
 </div>
 {% endif %}
 
@@ -61,6 +85,20 @@
     <div class="stat-value">{{ plan.donor_candidates | length }}</div>
   </div>
 </div>
+
+{% if plan.recommended_mix %}
+<section class="card">
+  <h2>Recommended mix</h2>
+  <p class="mix-headline">{{ plan.recommended_mix.headline }}</p>
+  {% if plan.recommended_mix.by_storage %}
+    <ul class="mix-breakdown">
+      {% for storage, count in plan.recommended_mix.by_storage.items() %}
+        <li>{{ count }} {{ storage }} pallet{{ 's' if count != 1 else '' }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</section>
+{% endif %}
 
 <section class="card">
   <h2>FLL pallet checklist</h2>
@@ -94,6 +132,33 @@
   {% endif %}
 </section>
 
+{% if plan.also_consider %}
+<section class="card">
+  <h2>Also consider</h2>
+  <p class="meta">Next pallets below your cap that still scored above zero.</p>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Pallet</th>
+        <th>Storage</th>
+        <th>Priority score</th>
+        <th>Reason</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for rec in plan.also_consider %}
+      <tr>
+        <td><strong>{{ rec.display_name }}</strong></td>
+        <td>{{ rec.storage }}</td>
+        <td>{{ rec.priority_score }}</td>
+        <td>{{ rec.reason }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}
+
 <section class="card">
   <h2>Category breakdown</h2>
   <div class="table-wrap">
@@ -115,7 +180,7 @@
           <td>{{ row.display_name }}</td>
           <td>{{ row.demand_pct }}% ({{ row.client_count }} clients)</td>
           <td>{{ row.supply_label }}</td>
-          <td>{{ row.priority_score }}</td>
+          <td>{{ row.priority_score }}{% if row.seasonal_boost %} <span class="meta">(+{{ row.seasonal_boost }} seasonal)</span>{% endif %}</td>
           <td>{{ row.fll_pallet_name or '—' }}</td>
         </tr>
         {% endfor %}
