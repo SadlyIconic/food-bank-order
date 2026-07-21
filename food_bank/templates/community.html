@@ -20,6 +20,13 @@
     <div class="community-dropoff-banner">
       <strong data-i18n="community_dropoff_title">Drop-off instructions</strong>
       <p>{{ board.dropoff_instructions }}</p>
+      {% if board.dropoff_map_url %}
+        <p class="dropoff-map-link">
+          <a href="{{ board.dropoff_map_url }}" class="btn btn-sm btn-secondary" target="_blank" rel="noopener" data-i18n="community_open_maps">
+            Open in Google Maps
+          </a>
+        </p>
+      {% endif %}
     </div>
   {% endif %}
 </div>
@@ -65,6 +72,11 @@
             <h3 class="community-need-name">{{ item.donor_friendly_translation or item.display_name }}</h3>
             {% if item.description %}
               <p class="meta community-need-desc">{{ item.description }}</p>
+            {% endif %}
+            {% if item.donor_guidance %}
+              <p class="meta community-need-guidance">
+                <span data-i18n="community_donor_guidance">Donor tip</span>: {{ item.donor_guidance }}
+              </p>
             {% endif %}
             {% if item.example_items %}
               <p class="meta community-need-examples">

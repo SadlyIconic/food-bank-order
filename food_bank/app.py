@@ -76,7 +76,9 @@ def admin_required(view):
 
 @app.route("/about")
 def about():
-    return render_template("about.html")
+    settings = store.get_app_settings()
+    trip = store.get_trip_settings()
+    return render_template("about.html", settings=settings, trip=trip)
 
 
 @app.route("/")
@@ -99,9 +101,21 @@ def submit_requests():
     client_id = _ensure_client_id()
     settings = store.get_app_settings()
     category_ids = request.form.getlist("category_ids")
+    expecting_raw = request.form.get("expecting_visit", "").strip().lower()
+    if expecting_raw == "yes":
+        expecting_visit = True
+    elif expecting_raw == "no":
+        expecting_visit = False
+    else:
+        expecting_visit = None
 
     try:
-        count = store.add_client_requests(client_id, category_ids, settings["food_bank_id"])
+        count = store.add_client_requests(
+            client_id,
+            category_ids,
+            settings["food_bank_id"],
+            expecting_visit=expecting_visit,
+        )
     except ValueError as exc:
         flash(str(exc), "error")
         return redirect(url_for("request_board"))
@@ -165,6 +179,7 @@ def community_pledge_success():
         category_name=category_name,
         board=board,
         dropoff_instructions=settings.get("donor_dropoff_instructions", ""),
+        dropoff_map_url=settings.get("donor_dropoff_map_url", ""),
     )
 
 
@@ -276,6 +291,9 @@ def admin_settings():
                     "high_demand_threshold", settings["high_demand_threshold"]
                 ),
                 "donor_dropoff_instructions": request.form.get("donor_dropoff_instructions", ""),
+                "agency_hours": request.form.get("agency_hours", ""),
+                "agency_about_extra": request.form.get("agency_about_extra", ""),
+                "donor_dropoff_map_url": request.form.get("donor_dropoff_map_url", ""),
             }
         )
         store.save_trip_settings(

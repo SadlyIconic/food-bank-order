@@ -60,6 +60,9 @@ DEFAULT_APP_SETTINGS = {
     "max_fll_pallets": 7,
     "high_demand_threshold": 50,
     "donor_dropoff_instructions": "",
+    "agency_hours": "",
+    "agency_about_extra": "",
+    "donor_dropoff_map_url": "",
 }
 
 DEFAULT_FOOD_BANK_ID = "default"
@@ -194,6 +197,18 @@ def _init_schema(conn) -> None:
 
         CREATE INDEX IF NOT EXISTS idx_client_requests_client_week
             ON client_requests (food_bank_id, visit_week, client_id);
+
+        CREATE TABLE IF NOT EXISTS client_week_meta (
+            client_id TEXT NOT NULL,
+            food_bank_id TEXT NOT NULL DEFAULT 'default',
+            visit_week TEXT NOT NULL,
+            expecting_visit INTEGER NOT NULL,
+            submitted_at TEXT NOT NULL,
+            PRIMARY KEY (client_id, food_bank_id, visit_week)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_client_week_meta_week
+            ON client_week_meta (food_bank_id, visit_week);
 
         CREATE TABLE IF NOT EXISTS trend_snapshots (
             id TEXT PRIMARY KEY,
@@ -1051,6 +1066,7 @@ def get_community_needs(
         "donors": donor_names,
         "trip": trip_context,
         "dropoff_instructions": app_settings.get("donor_dropoff_instructions", ""),
+        "dropoff_map_url": app_settings.get("donor_dropoff_map_url", ""),
         "capacity_updated_at": thresholds.get("updated_at", ""),
         "state": state,
         "round_id": current_round_id(),
@@ -1239,6 +1255,10 @@ def reset_planning_week(food_bank_id: str | None = None) -> dict:
     with get_conn() as conn:
         conn.execute(
             "DELETE FROM client_requests WHERE food_bank_id = ? AND visit_week = ?",
+            (fb_id, week_key),
+        )
+        conn.execute(
+            "DELETE FROM client_week_meta WHERE food_bank_id = ? AND visit_week = ?",
             (fb_id, week_key),
         )
         conn.execute(
@@ -1442,6 +1462,13 @@ def save_app_settings(settings: dict) -> dict:
             pass
     if "donor_dropoff_instructions" in settings:
         current["donor_dropoff_instructions"] = str(settings["donor_dropoff_instructions"]).strip()[:2000]
+    if "agency_hours" in settings:
+        current["agency_hours"] = str(settings["agency_hours"]).strip()[:240]
+    if "agency_about_extra" in settings:
+        current["agency_about_extra"] = str(settings["agency_about_extra"]).strip()[:2000]
+    if "donor_dropoff_map_url" in settings:
+        map_url = str(settings["donor_dropoff_map_url"]).strip()[:500]
+        current["donor_dropoff_map_url"] = map_url if map_url.startswith("https://") else ""
     with get_conn() as conn:
         _kv_set(conn, "app_settings", current)
         conn.commit()
@@ -1495,6 +1522,7 @@ def _enrich_planning_category(row: dict) -> dict:
     return {
         **row,
         "description": seed.get("description", row.get("donor_friendly_translation", "")),
+        "donor_guidance": seed.get("donor_guidance", ""),
         "example_items": example_items,
     }
 
@@ -1546,11 +1574,15 @@ def add_client_requests(
     category_ids: list[str],
     food_bank_id: str | None = None,
     week_key: str | None = None,
+    *,
+    expecting_visit: bool | None = None,
 ) -> int:
     fb_id = food_bank_id or get_app_settings()["food_bank_id"]
     wk = week_key or visit_week_key()
     if client_submitted_this_week(client_id, fb_id, wk):
         raise ValueError("You already submitted requests for this week.")
+    if expecting_visit is None:
+        raise ValueError("Please answer whether you expect to visit for food this week.")
 
     allowed = {cat["id"] for cat in get_planning_categories(fb_id, active_only=True)}
     unique_ids = []
@@ -1566,7 +1598,17 @@ def add_client_requests(
         raise ValueError("Select at least one category.")
 
     now = _utc_now()
+    visit_flag = 1 if expecting_visit else 0
     with get_conn() as conn:
+        conn.execute(
+            """INSERT INTO client_week_meta
+               (client_id, food_bank_id, visit_week, expecting_visit, submitted_at)
+               VALUES (?, ?, ?, ?, ?)
+               ON CONFLICT(client_id, food_bank_id, visit_week) DO UPDATE SET
+                 expecting_visit = excluded.expecting_visit,
+                 submitted_at = excluded.submitted_at""",
+            (client_id, fb_id, wk, visit_flag, now),
+        )
         for category_id in unique_ids:
             conn.execute(
                 """INSERT INTO client_requests
@@ -1578,7 +1620,7 @@ def add_client_requests(
     return len(unique_ids)
 
 
-def _category_counts_for_week(food_bank_id: str, week_key: str) -> dict[str, int]:
+def _category_counts_for_week(food_bank_id: str, week_key: str) -> dict:
     with get_conn() as conn:
         total_row = conn.execute(
             """SELECT COUNT(DISTINCT client_id) AS total
@@ -1587,6 +1629,13 @@ def _category_counts_for_week(food_bank_id: str, week_key: str) -> dict[str, int
             (food_bank_id, week_key),
         ).fetchone()
         total_clients = int(total_row["total"] or 0)
+        expecting_row = conn.execute(
+            """SELECT COUNT(*) AS total
+               FROM client_week_meta
+               WHERE food_bank_id = ? AND visit_week = ? AND expecting_visit = 1""",
+            (food_bank_id, week_key),
+        ).fetchone()
+        expecting_visit_clients = int(expecting_row["total"] or 0)
         rows = conn.execute(
             """SELECT category_id, COUNT(DISTINCT client_id) AS client_count
                FROM client_requests
@@ -1595,24 +1644,34 @@ def _category_counts_for_week(food_bank_id: str, week_key: str) -> dict[str, int
             (food_bank_id, week_key),
         ).fetchall()
     counts = {row["category_id"]: int(row["client_count"]) for row in rows}
-    return {"total_clients": total_clients, "counts": counts}
+    return {
+        "total_clients": total_clients,
+        "expecting_visit_clients": expecting_visit_clients,
+        "counts": counts,
+    }
 
 
 def _metrics_from_counts(
     categories: list[dict],
     total_clients: int,
     counts: dict[str, int],
+    expecting_visit_clients: int = 0,
 ) -> list[dict]:
+    use_normalized = expecting_visit_clients >= 1
+    denominator = expecting_visit_clients if use_normalized else total_clients
     metrics: list[dict] = []
     for category in categories:
         client_count = counts.get(category["id"], 0)
-        demand_pct = round(100 * client_count / total_clients, 1) if total_clients else 0.0
+        demand_pct = round(100 * client_count / denominator, 1) if denominator else 0.0
         metrics.append(
             {
                 "category_id": category["id"],
                 "display_name": category["display_name"],
                 "client_count": client_count,
                 "demand_pct": demand_pct,
+                "total_submitters": total_clients,
+                "expecting_visit_count": expecting_visit_clients,
+                "demand_normalized": use_normalized,
             }
         )
     metrics.sort(key=lambda row: row["demand_pct"], reverse=True)
@@ -1689,8 +1748,21 @@ def _format_delta(value: float | None) -> str:
     return f"{sign}{value:.1f}%"
 
 
-def _build_insight(display_name: str, demand_pct: float, vs_prior: float | None, vs_rolling: float | None, rolling_weeks: int) -> str:
-    parts = [f"{display_name}: {demand_pct:.0f}% of clients"]
+def _build_insight(
+    display_name: str,
+    demand_pct: float,
+    vs_prior: float | None,
+    vs_rolling: float | None,
+    rolling_weeks: int,
+    *,
+    demand_normalized: bool = False,
+    expecting_visit_count: int = 0,
+) -> str:
+    if demand_normalized:
+        client_label = f"{expecting_visit_count} clients expecting a visit"
+    else:
+        client_label = "clients"
+    parts = [f"{display_name}: {demand_pct:.0f}% of {client_label}"]
     if vs_prior is not None:
         parts.append(f"({_format_delta(vs_prior)} vs last week)")
     if vs_rolling is not None:
@@ -1719,6 +1791,7 @@ def compute_weekly_trends(
             categories,
             prior_counts["total_clients"],
             prior_counts["counts"],
+            prior_counts["expecting_visit_clients"],
         )
         prior_map = {row["category_id"]: row["demand_pct"] for row in prior_metrics}
     else:
@@ -1733,10 +1806,21 @@ def compute_weekly_trends(
         else:
             hist = _category_counts_for_week(fb_id, key)
             if hist["total_clients"] > 0:
-                hist_metrics = _metrics_from_counts(categories, hist["total_clients"], hist["counts"])
+                hist_metrics = _metrics_from_counts(
+                    categories,
+                    hist["total_clients"],
+                    hist["counts"],
+                    hist["expecting_visit_clients"],
+                )
                 rolling_maps.append({row["category_id"]: row["demand_pct"] for row in hist_metrics})
 
-    base_metrics = _metrics_from_counts(categories, current["total_clients"], current["counts"])
+    base_metrics = _metrics_from_counts(
+        categories,
+        current["total_clients"],
+        current["counts"],
+        current["expecting_visit_clients"],
+    )
+    demand_normalized = current["expecting_visit_clients"] >= 1
     enriched: list[dict] = []
     insights: list[str] = []
 
@@ -1748,7 +1832,15 @@ def compute_weekly_trends(
         rolling_avg = round(sum(rolling_values) / len(rolling_values), 1) if rolling_values else None
         vs_rolling = round(row["demand_pct"] - rolling_avg, 1) if rolling_avg is not None else None
 
-        insight = _build_insight(row["display_name"], row["demand_pct"], vs_prior, vs_rolling, window)
+        insight = _build_insight(
+            row["display_name"],
+            row["demand_pct"],
+            vs_prior,
+            vs_rolling,
+            window,
+            demand_normalized=demand_normalized,
+            expecting_visit_count=current["expecting_visit_clients"],
+        )
         enriched_row = {
             **row,
             "vs_prior_week_pct": vs_prior,
@@ -1765,6 +1857,8 @@ def compute_weekly_trends(
         "week_key": wk,
         "computed_at": _utc_now(),
         "total_clients": current["total_clients"],
+        "expecting_visit_count": current["expecting_visit_clients"],
+        "demand_normalized": demand_normalized,
         "rolling_weeks": window,
         "categories": enriched,
         "insights": insights[:6],
@@ -1979,6 +2073,7 @@ def get_category_donor_board() -> list[dict]:
                 "display_name": candidate["display_name"],
                 "donor_friendly_translation": cat.get("donor_friendly_translation", ""),
                 "description": cat.get("description", ""),
+                "donor_guidance": cat.get("donor_guidance", ""),
                 "example_items": cat.get("example_items", []),
                 "supply_level": candidate["supply_level"],
                 "supply_label": candidate["supply_label"],

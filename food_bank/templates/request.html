@@ -43,6 +43,22 @@
     </div>
     {% endfor %}
   </div>
+
+  <fieldset class="visit-question card">
+    <legend data-i18n="request_expecting_visit">Do you expect to visit for food this week?</legend>
+    <div class="visit-options">
+      <label class="visit-option">
+        <input type="radio" name="expecting_visit" value="yes" required>
+        <span data-i18n="request_expecting_yes">Yes, I expect to visit</span>
+      </label>
+      <label class="visit-option">
+        <input type="radio" name="expecting_visit" value="no" required>
+        <span data-i18n="request_expecting_no">No, not this week</span>
+      </label>
+    </div>
+    <p class="form-hint" data-i18n="request_expecting_hint">This helps us estimate demand from households planning a visit. Your answer is anonymous.</p>
+  </fieldset>
+
   <div class="form-actions sticky-actions">
     <button type="submit" class="btn btn-primary btn-lg" id="submit-requests" disabled data-i18n="request_submit">
       Submit my needs

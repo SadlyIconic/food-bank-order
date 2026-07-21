@@ -33,6 +33,12 @@
     <div class="stat-label">Clients this week</div>
     <div class="stat-value">{{ report.total_clients }}</div>
   </div>
+  {% if report.demand_normalized %}
+  <div class="stat-card">
+    <div class="stat-label">Expecting a visit</div>
+    <div class="stat-value">{{ report.expecting_visit_count }}</div>
+  </div>
+  {% endif %}
   <div class="stat-card">
     <div class="stat-label">Rolling average window</div>
     <div class="stat-value">{{ report.rolling_weeks }} wk</div>
@@ -42,6 +48,13 @@
     <div class="stat-value stat-value-sm">{{ snapshot.computed_at[:19] if snapshot else 'Not yet' }}</div>
   </div>
 </div>
+
+{% if report.demand_normalized %}
+<p class="meta trends-normalized-note">
+  Percentages are based on {{ report.expecting_visit_count }} client{{ 's' if report.expecting_visit_count != 1 else '' }}
+  expecting a visit this week (not all submitters).
+</p>
+{% endif %}
 
 {% if report.insights %}
 <section class="card insight-cards">

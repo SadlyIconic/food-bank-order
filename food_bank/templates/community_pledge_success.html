@@ -27,6 +27,21 @@
     <div class="dropoff-instructions">
       <h2 class="card-title" data-i18n="community_dropoff_title">Drop-off instructions</h2>
       <p>{{ dropoff_instructions }}</p>
+      {% if dropoff_map_url %}
+        <p class="dropoff-map-link">
+          <a href="{{ dropoff_map_url }}" class="btn btn-primary" target="_blank" rel="noopener" data-i18n="community_open_maps">
+            Open drop-off in Google Maps
+          </a>
+        </p>
+      {% endif %}
+    </div>
+  {% elif dropoff_map_url %}
+    <div class="dropoff-instructions">
+      <p class="dropoff-map-link">
+        <a href="{{ dropoff_map_url }}" class="btn btn-primary" target="_blank" rel="noopener" data-i18n="community_open_maps">
+          Open drop-off in Google Maps
+        </a>
+      </p>
     </div>
   {% endif %}
   <div class="form-actions">

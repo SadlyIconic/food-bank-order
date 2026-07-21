@@ -43,7 +43,22 @@
     <div class="form-group">
       <label for="donor_dropoff_instructions">Donor drop-off instructions</label>
       <textarea id="donor_dropoff_instructions" name="donor_dropoff_instructions" rows="4" placeholder="Address, hours, where to ring the bell, items not accepted…">{{ settings.donor_dropoff_instructions }}</textarea>
-      <p class="form-hint">Shown on the public donor board and pledge confirmation.</p>
+      <p class="form-hint">Shown on the public donor board, About page, and pledge confirmation.</p>
+    </div>
+    <div class="form-group">
+      <label for="donor_dropoff_map_url">Drop-off Google Maps URL</label>
+      <input type="url" id="donor_dropoff_map_url" name="donor_dropoff_map_url" value="{{ settings.donor_dropoff_map_url }}" placeholder="https://maps.google.com/…">
+      <p class="form-hint">Optional. Must start with <code>https://</code>. Shown as an “Open in Maps” link for donors.</p>
+    </div>
+
+    <h2 class="card-title">About page</h2>
+    <div class="form-group">
+      <label for="agency_hours">Agency hours</label>
+      <input type="text" id="agency_hours" name="agency_hours" value="{{ settings.agency_hours }}" placeholder="e.g. Tue–Thu 10am–2pm">
+    </div>
+    <div class="form-group">
+      <label for="agency_about_extra">Extra About paragraph</label>
+      <textarea id="agency_about_extra" name="agency_about_extra" rows="3" placeholder="Optional second paragraph for the About page…">{{ settings.agency_about_extra }}</textarea>
     </div>
 
     <h2 class="card-title">Planning</h2>

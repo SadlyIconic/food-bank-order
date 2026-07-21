@@ -5,6 +5,7 @@
   const i18n = () => window.FoodBankI18n;
   const submitBtn = document.getElementById("submit-requests");
   const inputs = form.querySelectorAll(".category-input");
+  const visitInputs = form.querySelectorAll('input[name="expecting_visit"]');
   const modal = document.getElementById("category-modal");
   const modalTitle = document.getElementById("category-modal-title");
   const modalDescription = document.getElementById("category-modal-description");
@@ -33,7 +34,8 @@
 
   function updateSubmitState() {
     const anyChecked = Array.from(inputs).some((input) => input.checked);
-    submitBtn.disabled = !anyChecked;
+    const visitAnswered = visitInputs.length === 0 || Array.from(visitInputs).some((input) => input.checked);
+    submitBtn.disabled = !anyChecked || !visitAnswered;
   }
 
   function syncTileStates() {
@@ -103,6 +105,10 @@
       syncTileStates();
       syncModalToggle();
     });
+  });
+
+  visitInputs.forEach((input) => {
+    input.addEventListener("change", updateSubmitState);
   });
 
   form.querySelectorAll(".category-open-btn").forEach((btn) => {

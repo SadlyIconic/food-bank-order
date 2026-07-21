@@ -36,11 +36,12 @@
       <label for="category_id" data-i18n="community_category_col">Category</label>
       <select id="category_id" name="category_id" required>
         {% for item in open_categories %}
-          <option value="{{ item.category_id }}">
+          <option value="{{ item.category_id }}" data-guidance="{{ item.donor_guidance or '' }}">
             {{ item.donor_friendly_translation or item.display_name }} — {{ item.supply_label }}
           </option>
         {% endfor %}
       </select>
+      <p id="category-guidance" class="form-hint community-guidance-hint" hidden></p>
     </div>
 
     <div class="form-group">
@@ -65,6 +66,31 @@
         if (anon.checked) nameInput.value = "";
       });
     }
+
+    const select = document.getElementById("category_id");
+    const guidanceEl = document.getElementById("category-guidance");
+    const guidanceLabel = () => {
+      const fb = window.FoodBankI18n;
+      return fb && typeof fb.t === "function" ? fb.t("community_donor_guidance") : "Donor tip";
+    };
+
+    function syncGuidance() {
+      if (!select || !guidanceEl) return;
+      const guidance = select.selectedOptions[0]?.dataset.guidance || "";
+      if (guidance) {
+        guidanceEl.textContent = `${guidanceLabel()}: ${guidance}`;
+        guidanceEl.hidden = false;
+      } else {
+        guidanceEl.textContent = "";
+        guidanceEl.hidden = true;
+      }
+    }
+
+    if (select) {
+      select.addEventListener("change", syncGuidance);
+      syncGuidance();
+    }
+    document.addEventListener("foodbank:langchange", syncGuidance);
   });
 </script>
 {% endblock %}

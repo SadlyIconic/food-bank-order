@@ -13,16 +13,53 @@
 </div>
 
 <div class="card about-card">
-  <p>
-    Connect Pantry helps neighborhood food agencies plan smarter with the community they serve.
-    Clients anonymously share what categories they expect to need each week; staff review demand trends,
-    set supply levels, and prepare Monday Food Lifeline orders; and neighborhood donors can pledge
-    to fill remaining gaps. No complicated inventory systems or integrations — just technology, food,
-    and community working together to connect needs with impact.
-  </p>
-  <div class="form-actions">
-    <a href="{{ url_for('request_board') }}" class="btn btn-primary" data-i18n="nav_request">Share needs</a>
-    <a href="{{ url_for('community_board') }}" class="btn btn-secondary" data-i18n="nav_give">Donate</a>
-  </div>
+  <section class="about-section">
+    <h2 class="about-section-title" data-i18n="about_mission_title">Our mission</h2>
+    <p>
+      Connect Pantry helps neighborhood food agencies plan smarter with the community they serve.
+      Clients anonymously share what categories they expect to need each week; staff review demand trends,
+      set supply levels, and prepare Monday Food Lifeline orders; and neighborhood donors can pledge
+      to fill remaining gaps. No complicated inventory systems or integrations — just technology, food,
+      and community working together to connect needs with impact.
+    </p>
+    {% if settings.agency_about_extra %}
+      <p>{{ settings.agency_about_extra }}</p>
+    {% endif %}
+  </section>
+
+  {% if settings.agency_hours %}
+    <section class="about-section">
+      <h2 class="about-section-title" data-i18n="about_hours_title">Hours</h2>
+      <p>{{ settings.agency_hours }}</p>
+    </section>
+  {% endif %}
+
+  {% if trip.store_name or settings.donor_dropoff_instructions %}
+    <section class="about-section">
+      <h2 class="about-section-title" data-i18n="about_location_title">Location</h2>
+      {% if trip.store_name %}
+        <p><strong>{{ trip.store_name }}</strong></p>
+      {% endif %}
+      {% if settings.donor_dropoff_instructions %}
+        <p class="about-location-detail">{{ settings.donor_dropoff_instructions }}</p>
+      {% endif %}
+      {% if settings.donor_dropoff_map_url %}
+        <p>
+          <a href="{{ settings.donor_dropoff_map_url }}" class="btn btn-sm btn-secondary" target="_blank" rel="noopener" data-i18n="community_open_maps">
+            Open in Google Maps
+          </a>
+        </p>
+      {% endif %}
+    </section>
+  {% endif %}
+
+  <section class="about-section">
+    <h2 class="about-section-title" data-i18n="about_help_title">How to help</h2>
+    <p data-i18n="about_help_body">Share what your household needs, or pledge to donate open categories on the neighborhood board.</p>
+    <div class="form-actions">
+      <a href="{{ url_for('request_board') }}" class="btn btn-primary" data-i18n="nav_request">Share needs</a>
+      <a href="{{ url_for('community_board') }}" class="btn btn-secondary" data-i18n="nav_give">Donate</a>
+    </div>
+  </section>
 </div>
 {% endblock %}

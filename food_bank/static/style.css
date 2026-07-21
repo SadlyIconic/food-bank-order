@@ -194,6 +194,57 @@ main.container {
   margin: 0 0 1.25rem;
 }
 
+.about-section + .about-section {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.about-section-title {
+  margin: 0 0 0.75rem;
+  font-size: 1.125rem;
+  color: #0f172a;
+}
+
+.about-location-detail {
+  white-space: pre-wrap;
+}
+
+.visit-question {
+  margin-top: 1.25rem;
+  padding: 1rem 1.125rem;
+}
+
+.visit-question legend {
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.visit-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.visit-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.community-need-guidance,
+.community-guidance-hint {
+  color: #475569;
+}
+
+.dropoff-map-link {
+  margin: 0.75rem 0 0;
+}
+
+.trends-normalized-note {
+  margin: 0 0 1rem;
+}
+
 .community-dropoff-banner,
 .dropoff-instructions {
   margin-top: 1rem;

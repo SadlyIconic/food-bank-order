@@ -4,6 +4,7 @@
     "display_name": "Produce",
     "description": "Fresh fruits and vegetables for cooking, salads, and healthy snacks.",
     "donor_friendly_translation": "Fresh fruits and vegetables",
+    "donor_guidance": "Fresh or shelf-stable fruit and vegetables are both welcome.",
     "sort_order": 10
   },
   {
@@ -11,6 +12,7 @@
     "display_name": "Protein",
     "description": "Meat, poultry, fish, eggs, and plant-based proteins to help fill out meals.",
     "donor_friendly_translation": "Meat, fish, eggs, and plant protein",
+    "donor_guidance": "Frozen, canned, or fresh protein all help — check expiration dates.",
     "sort_order": 20
   },
   {
@@ -18,6 +20,7 @@
     "display_name": "Dairy",
     "description": "Milk, cheese, yogurt, and other refrigerated dairy for everyday meals.",
     "donor_friendly_translation": "Milk, cheese, and yogurt",
+    "donor_guidance": "Refrigerated items only — please keep cold until drop-off.",
     "sort_order": 30
   },
   {
@@ -25,6 +28,7 @@
     "display_name": "Grains & Bread",
     "description": "Rice, pasta, bread, cereal, and other pantry staples that stretch groceries.",
     "donor_friendly_translation": "Rice, pasta, bread, and cereal",
+    "donor_guidance": "Unopened packages preferred; whole-grain options are great.",
     "sort_order": 40
   },
   {
@@ -32,6 +36,7 @@
     "display_name": "Gluten-Free Staples",
     "description": "Pantry basics without wheat or gluten — for celiac disease or gluten sensitivity.",
     "donor_friendly_translation": "Gluten-free pantry basics",
+    "donor_guidance": "Look for a certified gluten-free label when possible.",
     "sort_order": 50
   },
   {
@@ -39,6 +44,7 @@
     "display_name": "Canned & Shelf-Stable",
     "description": "Canned beans, soups, tomatoes, and other shelf-stable items that keep well.",
     "donor_friendly_translation": "Canned goods and shelf-stable meals",
+    "donor_guidance": "Pop-top or easy-open cans are especially helpful.",
     "sort_order": 60
   },
   {
@@ -46,6 +52,7 @@
     "display_name": "Baby & Infant",
     "description": "Formula, baby food, and infant supplies for families with young children.",
     "donor_friendly_translation": "Formula, baby food, and diapers",
+    "donor_guidance": "Unopened formula and age-appropriate baby food only.",
     "sort_order": 70
   },
   {
@@ -53,6 +60,7 @@
     "display_name": "Diapers",
     "description": "Diapers and related infant supplies — a frequent high-need item for families.",
     "donor_friendly_translation": "Diapers and wipes",
+    "donor_guidance": "Any size is OK — unopened packages preferred.",
     "sort_order": 80
   },
   {
@@ -60,6 +68,7 @@
     "display_name": "Personal Care",
     "description": "Soap, toothpaste, toilet paper, and laundry supplies — not food, but essential for households.",
     "donor_friendly_translation": "Soap, shampoo, and hygiene items",
+    "donor_guidance": "Travel-size and full-size items both help families.",
     "sort_order": 90
   },
   {
@@ -67,6 +76,7 @@
     "display_name": "Snacks",
     "description": "Crackers, granola bars, juice, and other items for kids and quick bites between meals.",
     "donor_friendly_translation": "Snacks for kids and adults",
+    "donor_guidance": "Nut-free options are appreciated when available.",
     "sort_order": 100
   }
 ]
